@@ -16,19 +16,6 @@
             "link-to-alert",
             "link-to-results",
             "inline-table"
-        ],
-        "tableHeaders": [
-            {"OO.ORG_ID": 'Org ID'},
-            {"OO.CREATED_TIMESTAMP": 'Created Timestamp'},
-            {"OO.BILLING_ACCOUNT_NUMBER": 'Billing Acct #'},
-            {"OO.ORIGINAL_ORDER_ID": 'Original Order ID'},
-            {"OO.ORDER_TYPE": 'Order Type'},
-            {"OO.MAXIMUM_STATUS": 'Maximum Status'},
-            {"STATUS.DESCRIPTION": 'Description'},
-            {"OO.CANCELLED": 'Cancelled'},
-            {"OO.BILL_TO_NAME": 'Bill-to Name'},
-            {"OO.EXT_ROUTE_ID": 'Ext Route ID'},
-            {"OO.EXT_SHIPMENT_STOP_NUMBER": 'Ext Shipment Stop #'},
         ]
     }, 
     "sql": "SELECT OO.ORG_ID 'Org ID', OO.CREATED_TIMESTAMP 'Created Timestamp',OO.BILLING_ACCOUNT_NUMBER 'Billing Acct #', OO.ORIGINAL_ORDER_ID 'Original Order ID', OO.ORDER_TYPE 'Order Type', OO.MAXIMUM_STATUS 'Maximum Status', STATUS.DESCRIPTION 'Description', OO.CANCELLED 'Cancelled', OO.BILL_TO_NAME 'Bill-to Name', OO.EXT_ROUTE_ID 'Ext Route ID', OO.EXT_SHIPMENT_STOP_NUMBER 'Ext Shipment Stop #' FROM default_dcorder.DCO_ORIGINAL_ORDER OO JOIN default_dcorder.DCO_ORDER_STATUS STATUS ON OO.MAXIMUM_STATUS = STATUS.ORDER_STATUS_ID WHERE 1=1 AND (OO.MAXIMUM_STATUS = '0000' or OO.MAXIMUM_STATUS = '0000') AND OO.CREATED_TIMESTAMP <= DATE_SUB(now(), INTERVAL '10' MINUTE);"

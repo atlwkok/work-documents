@@ -16,13 +16,6 @@
             "link-to-alert",
             "link-to-results",
             "inline-table"
-        ],
-        "tableHeaders": [
-            {"orgId":"orgId"},
-            {"location_id":"location_id"},
-            {"item_id":"item_id"},
-            {"pack_uom_type_id":"pack_uom_type_id"},
-            {"pack_uom_quantity":"pack_uom_quantity"},
         ]
     },
     "sql": "SELECT org_id, location_id, item_id, pack_uom_type_id, pack_uom_quantity FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT WHERE 1=1 AND org_id= $orgId AND pack_uom_type_id is NOT NULL;"
