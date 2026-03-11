@@ -1,0 +1,32 @@
+The alert condition for ''$name$''' was triggered.
+
+***MSP TO CLEAN UP***
+
+Note: Manhattan Case 8199748 is created.
+
+Description: 
+1. Go to System Management>Tranlog Summary>XNT_DCO_OriginalOrders 
+2. Type in the Order Number for the Order Stuck in Created Status
+3. Pull the JSON for the order and Put it in this API, but do not run Yet
+            {{app_host}}/dcorder/api/dcorder/originalOrder/save
+4. Delete the Original Order Using this API, Replace XXX with the House, and update the Order_Id
+            {{app_host}}/dcorder/api/dcorder/originalOrder/bulkDelete
+                {
+    "Data": [
+        {
+            "OrderId": "123123",
+            "OriginFacilityId": "XXX"
+        }
+    ]
+}
+5. Delete the Order Using this API, Replace XXX with the House, and update the Order_Id
+                {{app_host}}/dcorder/api/dcorder/order/bulkDelete
+                {
+    "Data": [
+        {
+            "OriginalOrderId": "123123",
+            "OriginFacilityId": "XXX"
+        }
+    ]
+}
+6. Reimport the Order using the JSON from Step 3

@@ -1,0 +1,56 @@
+TODO: 
+{
+    "alertName": "LIA RECORDS WITH PACK UOM TYPE POPULATED",
+    // locale needed as query differs by locale even for the same alert occasionally  
+    "alertPrefixLocale": "PEN - MAWM - ",
+    "alertActualName": {
+        "fullName": "PEN - MAWM - LIA Records with Pack UOM Type Populated",
+        "name": "LIA Records with Pack UOM Type Populated",
+        "locale": "PEN - MAWM - "
+    },
+    "database": {
+        "connection" : "MAPRD_NEW",
+        "type" : "MySQL",
+        "uri": "jdbc:mysql://10.248.248.195:3306/information_schema"
+    },
+    "email":{
+        "subject": "Splunk Alert: $name$",
+        "body": "The alert condition for '$name$' was triggered.",
+        "recipient": "Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com, wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "attachment": {
+            "types": "Link To Alert\nLink to Results\nInline Table",
+            "content": {
+                "inline": {
+                    "table": {
+                        "headers": ["org_id", "location_id", "item_id", "pack_uom_type_id", "pack_uom_quantity"],
+                        "data": [
+                                   ["PEN", "PETE01", "109112", None, None],
+                                   ["PEN", "A101A", "100025", None, None],
+                                   ["PEN", "01011A", "100025", None, None],
+                                   ["PEN", "01011A", "329695", None, None],
+                                   ["PEN", "01011A", "317857", None, None],
+                                   ["PEN", "DYBD", "329792", None, None],
+                                   ["PEN", "DYBD", "318789", None, None],
+                                   ["PEN", "PETE01", "100000", None, None],
+                                   ["PEN", "DYBD", "100000", None, None],
+                                   ["PEN", "01011A", "82813", None, None],
+                                   ["PEN", "01011A", "51309", None, None],
+                                   ["PEN", "05011A", "322344", None, None],
+                                   ["PEN", "04011B", "104588", None, None],
+                                   ["PEN", "10011A", "207986", None, None],
+                                   ["PEN", "01013A", "247106", None, None],
+                                   ["PEN", "01031A", "322088", None, None],
+                                   ["PEN", "WC02", "109338", None, None],
+                                 ]
+                    }
+                },
+                "link":{
+                    "alert": "https://....(TBD)",
+                    "result": "https://....(TBD)"
+                }
+            }
+        }
+        
+    },
+    "sql": "SELECT `org_id`, `location_id`, `item_id`, `pack_uom_type_id`, `pack_uom_quantity` FROM `DCI_LOCATION_ITEM_ASSIGNMENT` WHERE 1=1 AND `org_id`='PEN' AND `pack_uom_type_id` is NOT NULL;"
+}

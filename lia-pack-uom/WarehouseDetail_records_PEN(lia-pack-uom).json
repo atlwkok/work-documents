@@ -1,0 +1,26 @@
+TODO: 
+{
+    "alertName": "LIA RECORDS WITH PACK UOM TYPE POPULATED",
+    // locale needed as query differs by locale even for the same alert occasionally  
+    "alertPrefixLocale": "PEN - MAWM - ",
+    "alertActualName": {
+        "fullName": "PEN - MAWM - LIA Records with Pack UOM Type Populated",
+        "name": "LIA Records with Pack UOM Type Populated",
+        "locale": "PEN - MAWM - "
+    },
+    "database": {
+        "connection" : "MAPRD_NEW",
+        "type" : "MySQL",
+        "uri": "jdbc:mysql://10.248.248.195:3306/information_schema"
+    },
+    "email":{
+        "subject": "Splunk Alert: $name$",
+        "body": "The alert condition for '$name$' was triggered.",
+        "recipient": "Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com, wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "attachment": {
+            //Will be generated dynamically in code
+        }
+        
+    },
+    "sql": "SELECT `org_id`, `location_id`, `item_id`, `pack_uom_type_id`, `pack_uom_quantity` FROM `DCI_LOCATION_ITEM_ASSIGNMENT` WHERE 1=1 AND `org_id`='PEN' AND `pack_uom_type_id` is NOT NULL;"
+}

@@ -1,0 +1,26 @@
+{
+    "alertName": "LIA RECORDS WITH PACK UOM TYPE POPULATED",
+    // locale needed as query differs by locale even for the same alert occasionally  
+    "orgId": "ATL",
+    "dataSource": "MAWM",
+    "database": {
+        "connection" : "MAPRD_NEW",
+        "type" : "MySQL",
+        "uri": "jdbc:mysql://10.248.248.195:3306/information_schema"
+    },
+    "email":{
+        "subject": "Splunk Alert: $orgId$ + $dataSource$ + $alertName$",
+        "body": "The alert condition for '$orgId$ + $dataSource$ + $alertName$' was triggered.",
+        "fromEmail": "test@rndc-usa.com",
+        "toEmail": "Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com, wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer": "",
+        "attachment": [
+            //Will be generated dynamically in code
+            "link-to-alert",
+            "link-to-results",
+            "inline-table"
+        ]
+        
+    },
+    "sql": "SELECT org_id, location_id, item_id, pack_uom_type_id, pack_uom_quantity FROM DCI_LOCATION_ITEM_ASSIGNMENT WHERE 1=1 AND org_id= $orgId AND pack_uom_type_id is NOT NULL;"
+}

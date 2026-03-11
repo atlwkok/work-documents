@@ -1,0 +1,25 @@
+{
+    "alertName": "LIA RECORDS WITH PACK UOM TYPE POPULATED", 
+    "dataSource": "MAWM",
+    "database": {
+        "connection" : "MAPRD_NEW",
+        "type" : "MySQL",
+        "uri": "jdbc:mysql://10.248.248.195:3306/information_schema"
+    },
+    "email":{
+        "subject": "Splunk Alert: $orgId$ + $dataSource$ + $alertName$",
+        "body": "The alert condition for '$orgId$ + $dataSource$ + $alertName$' was triggered.***MSP TO CLEAN UP*** Clear the PACK UOM TYPE ID and PACK UOM QUANTITY from the Location Item Assignment UI.",        
+        "fromEmail": "wms-tools-noreply@rndc-usa.com",
+        "toEmail": "wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com, wmsinternal@RNDC-USA.COM",
+        "footer": "",
+        "attachment": [ 
+            "link-to-alert",
+            "link-to-results",
+            "inline-table",
+            "csv"
+        ]
+        
+    },
+    "sql": "SELECT org_id, location_id, item_id, pack_uom_type_id, pack_uom_quantity FROM DCI_LOCATION_ITEM_ASSIGNMENT WHERE 1=1 AND org_id= $orgId AND pack_uom_type_id is NOT NULL;"
+}
+ 
