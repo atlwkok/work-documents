@@ -1,1 +1,8 @@
+// Named, enabled queries group 1 
+// (OAH)
 The alert condition for '$name$' was triggered.
+
+// (ARK)
+The alert condition for '$name$' was triggered.
+
+***MSP TO CLEAN UP***
