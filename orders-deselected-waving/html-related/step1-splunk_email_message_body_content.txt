@@ -2,7 +2,17 @@
 // (OAH)
 The alert condition for '$name$' was triggered.
 
+
+
+
+// Named, enabled queries group 2 (PEN only)
+
+
+//Named, disabled queries
 // (ARK)
 The alert condition for '$name$' was triggered.
 
 ***MSP TO CLEAN UP***
+
+
+// Unnamed queries (all other org ids)

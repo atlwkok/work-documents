@@ -23,6 +23,16 @@
     "sql": "SELECT DE.org_id, DE.order_id, O.ext_route_id, DE.order_planning_run_id, DE.deselected_orders, DE.deselected_order_lines, DE.updated_by, DE.created_timestamp FROM   default_dcorder.dco_plan_run_deselect_count DE join default_dcorder.dco_order_plan_run_strategy PLA ON DE.order_planning_run_id = PLA.order_planning_run_id AND PLA.org_id = DE.org_id left join default_dcorder.dco_order O ON O.order_id = DE.order_id AND O.org_id = DE.org_id WHERE  1 = 1 AND DE.created_timestamp >= Now() - interval 15 minute AND Upper(PLA.planning_strategy_id) LIKE ''STANDARD%'' AND DE.deselected_order_lines > ''0'' AND DE.org_id = $orgId;"
 }'
 
+
+
+
+
+
+// Named, enabled queries group 2 (PEN only)
+
+
+
+//Named, disabled queries
 // (ARK)
 '{
     "alertName": "STANDARD ORDERS DESELECTED DURING WAVING",
@@ -47,14 +57,6 @@
     "sql": "SELECT DE.org_id, DE.order_id, O.ext_route_id, DE.order_planning_run_id, DE.deselected_orders, DE.deselected_order_lines, DE.updated_by, DE.created_timestamp FROM   default_dcorder.dco_plan_run_deselect_count DE join default_dcorder.dco_order_plan_run_strategy PLA ON DE.order_planning_run_id = PLA.order_planning_run_id AND PLA.org_id = DE.org_id left join default_dcorder.dco_order O ON O.order_id = DE.order_id AND O.org_id = DE.org_id WHERE  1 = 1 AND DE.created_timestamp >= Now() - interval 15 minute AND Upper(PLA.planning_strategy_id) LIKE ''STANDARD%'' AND DE.deselected_order_lines > ''0'' AND DE.org_id = $orgId;"
 }'
 
-
-
-
-// Named, enabled queries group 2 (PEN only)
-
-
-
-//Named, disabled queries
 
 
 // Unnamed queries (all other org ids)
