@@ -18,6 +18,7 @@ The alert condition for '$name$' was triggered.
 ***MSP TO CLEAN UP*** Description: This alert displays routed orders that were deselected from the WMS wave.  Please call the IT Service Desk immediately to correct this condition.  Phone: 866-RNDC-HLP (866-763-2457)
 
 
+// Named, enabled queries group 2 (PEN only; only this org has different query )
 // (HAW/KAP/KAU/MAU/PEN)
 The alert condition for '$name$' was triggered.
 
@@ -30,7 +31,6 @@ The alert condition for '$name$' was triggered.
 
 
 
-// Named, enabled queries group 2 (PEN only; only this org has different query )
 
 
 //Named, disabled queries

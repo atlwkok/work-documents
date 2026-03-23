@@ -92,6 +92,9 @@
 
 
 
+
+
+// Named, enabled queries group 2 (PEN only; only this org has different query )
 // (HAW/KAP/KAU/MAU/PEN)
 '{
     "alertName": "STANDARD ORDERS DESELECTED DURING WAVING",
@@ -136,10 +139,6 @@
 
  
 
-
-
-
-// Named, enabled queries group 2 (PEN only; only this org has different query )
 
 
 
