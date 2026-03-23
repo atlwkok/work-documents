@@ -16,6 +16,11 @@ Phone: 866-RNDC-HLP (866-763-2457)
 
 
 
+// (HAW/KAP/KAU/MAU/PEN)
+The alert condition for '$name$' was triggered.
+
+
+ 
 
 
 
@@ -23,8 +28,7 @@ Phone: 866-RNDC-HLP (866-763-2457)
 
 
 
-
-// Named, enabled queries group 2 (PEN only)
+// Named, enabled queries group 2 (PEN only; only this org has different query )
 
 
 //Named, disabled queries
