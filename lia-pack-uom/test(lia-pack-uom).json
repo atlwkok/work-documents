@@ -11,6 +11,7 @@
         "body": "The alert condition for '$orgId$ + $dataSource$ + $alertName$' was triggered.***MSP TO CLEAN UP*** Clear the PACK UOM TYPE ID and PACK UOM QUANTITY from the Location Item Assignment UI.",        
         "fromEmail": "wms-tools-noreply@rndc-usa.com",
         "toEmail": "wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com, wmsinternal@RNDC-USA.COM",
+        "ccEmail": "",
         "footer": "",
         "attachment": [ 
             "link-to-alert",

@@ -12,7 +12,8 @@
         "subject": "Splunk Alert: $orgId$ + $dataSource$ + $alertName$",
         "body": "The alert condition for '$orgId$ + $dataSource$ + $alertName$' was triggered.",
         "fromEmail": "test@rndc-usa.com",
-        "toEmail": "Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com, wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "toEmail": "Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com",
+        "ccEmail": "wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
         "footer": "",
         "attachment": [
             //Will be generated dynamically in code
