@@ -34,12 +34,6 @@ The alert condition for '$name$' was triggered.
 
 
 //Named, disabled queries
-// (ARK)
-The alert condition for '$name$' was triggered.
-
-***MSP TO CLEAN UP***
-
-
 
 // (ABQ/ASH/DEN)
 The alert condition for '$name$' was triggered.
@@ -62,3 +56,4 @@ The alert condition for '$name$' was triggered.
 
 
 // Unnamed queries (all other org ids)
+The alert condition for '$name$' was triggered.
