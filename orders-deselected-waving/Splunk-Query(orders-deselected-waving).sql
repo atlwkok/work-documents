@@ -7,16 +7,16 @@
        DE.deselected_order_lines,
        DE.updated_by,
        DE.created_timestamp
-FROM   default_dcorder.dco_plan_run_deselect_count DE
-       join default_dcorder.dco_order_plan_run_strategy PLA
+FROM   default_dcorder.DCO_PLAN_RUN_DESELECT_COUNT DE
+       join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA
          ON DE.order_planning_run_id = PLA.order_planning_run_id
             AND PLA.org_id = DE.org_id
-       left join default_dcorder.dco_order O
+       left join default_dcorder.DCO_ORDER O
               ON O.order_id = DE.order_id
                  AND O.org_id = DE.org_id
 WHERE  1 = 1
        AND DE.created_timestamp >= Now() - interval 15 minute
-       AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%'
+       AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%%'
        AND DE.deselected_order_lines > '0'
        AND DE.org_id = 'OAH'" 
 connection="MAPRD_NEW"
@@ -32,16 +32,16 @@ SELECT DE.org_id,
        DE.deselected_order_lines,
        DE.updated_by,
        DE.created_timestamp
-FROM   default_dcorder.dco_plan_run_deselect_count DE
-       join default_dcorder.dco_order_plan_run_strategy PLA
+FROM   default_dcorder.DCO_PLAN_RUN_DESELECT_COUNT DE
+       join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA
          ON DE.order_planning_run_id = PLA.order_planning_run_id
             AND PLA.org_id = DE.org_id
-       left join default_dcorder.dco_order O
+       left join default_dcorder.DCO_ORDER O
               ON O.order_id = DE.order_id
                  AND O.org_id = DE.org_id
 WHERE  1 = 1
        AND DE.created_timestamp >= Now() - interval 15 minute
-       AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%'
+       AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%%'
        AND DE.deselected_order_lines > '0'
        AND DE.org_id = 'OAH';
 
@@ -55,16 +55,16 @@ SELECT DE.org_id,
        DE.deselected_order_lines,
        DE.updated_by,
        DE.created_timestamp
-FROM   default_dcorder.dco_plan_run_deselect_count DE
-       join default_dcorder.dco_order_plan_run_strategy PLA
+FROM   default_dcorder.DCO_PLAN_RUN_DESELECT_COUNT DE
+       join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA
          ON DE.order_planning_run_id = PLA.order_planning_run_id
             AND PLA.org_id = DE.org_id
-       left join default_dcorder.dco_order O
+       left join default_dcorder.DCO_ORDER O
               ON O.order_id = DE.order_id
                  AND O.org_id = DE.org_id
 WHERE  1 = 1
        AND DE.created_timestamp >= Now() - interval 15 minute
-       AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%'
+       AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%%'
        AND DE.deselected_order_lines > '0'
        AND DE.org_id = $orgId;
 
@@ -74,10 +74,10 @@ WHERE  1 = 1
 
 -- Query with aliases surrounded by double quotes, to be inserted into excel as part of payload after converting to string with no newlines to be value of sql property in payload.
 -- When referring to strings in SQL query, should be surrounded by single quote.
-"SELECT DE.org_id, DE.order_id, O.ext_route_id, DE.order_planning_run_id, DE.deselected_orders, DE.deselected_order_lines, DE.updated_by, DE.created_timestamp FROM   default_dcorder.dco_plan_run_deselect_count DE join default_dcorder.dco_order_plan_run_strategy PLA ON DE.order_planning_run_id = PLA.order_planning_run_id AND PLA.org_id = DE.org_id left join default_dcorder.dco_order O ON O.order_id = DE.order_id AND O.org_id = DE.org_id WHERE  1 = 1 AND DE.created_timestamp >= Now() - interval 15 minute AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%' AND DE.deselected_order_lines > '0' AND DE.org_id = $orgId;"
+"SELECT DE.org_id, DE.order_id, O.ext_route_id, DE.order_planning_run_id, DE.deselected_orders, DE.deselected_order_lines, DE.updated_by, DE.created_timestamp FROM   default_dcorder.DCO_PLAN_RUN_DESELECT_COUNT DE join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA ON DE.order_planning_run_id = PLA.order_planning_run_id AND PLA.org_id = DE.org_id left join default_dcorder.DCO_ORDER O ON O.order_id = DE.order_id AND O.org_id = DE.org_id WHERE  1 = 1 AND DE.created_timestamp >= Now() - interval 15 minute AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%%' AND DE.deselected_order_lines > '0' AND DE.org_id = $orgId;"
  
  insert into table (V)
- set payload = "SELECT DE.org_id, DE.order_id, O.ext_route_id, DE.order_planning_run_id, DE.deselected_orders, DE.deselected_order_lines, DE.updated_by, DE.created_timestamp FROM   default_dcorder.dco_plan_run_deselect_count DE join default_dcorder.dco_order_plan_run_strategy PLA ON DE.order_planning_run_id = PLA.order_planning_run_id AND PLA.org_id = DE.org_id left join default_dcorder.dco_order O ON O.order_id = DE.order_id AND O.org_id = DE.org_id WHERE  1 = 1 AND DE.created_timestamp >= Now() - interval 15 minute AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%' AND DE.deselected_order_lines > '0' AND DE.org_id = $orgId;"
+ set payload = "SELECT DE.org_id, DE.order_id, O.ext_route_id, DE.order_planning_run_id, DE.deselected_orders, DE.deselected_order_lines, DE.updated_by, DE.created_timestamp FROM   default_dcorder.DCO_PLAN_RUN_DESELECT_COUNT DE join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA ON DE.order_planning_run_id = PLA.order_planning_run_id AND PLA.org_id = DE.org_id left join default_dcorder.DCO_ORDER O ON O.order_id = DE.order_id AND O.org_id = DE.org_id WHERE  1 = 1 AND DE.created_timestamp >= Now() - interval 15 minute AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%%' AND DE.deselected_order_lines > '0' AND DE.org_id = $orgId;"
 
 -- BELOW: FOR 2ND GROUP OF QUERIES (PEN WHICH IS SIGNIFICANTLY DIFFERENT)
 -- *****Remember there is 1 more different group of enabled Splunk queries of queries!!!!
@@ -92,16 +92,16 @@ WHERE  1 = 1
        DE.deselected_order_lines,
        DE.updated_by,
        DE.created_timestamp
-FROM   default_dcorder.dco_plan_run_deselect_count DE
-       join default_dcorder.dco_order_plan_run_strategy PLA
+FROM   default_dcorder.DCO_PLAN_RUN_DESELECT_COUNT DE
+       join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA
          ON DE.order_planning_run_id = PLA.order_planning_run_id
             AND PLA.org_id = DE.org_id
-       left join default_dcorder.dco_order O
+       left join default_dcorder.DCO_ORDER O
               ON O.order_id = DE.order_id
                  AND O.org_id = DE.org_id
 WHERE  1 = 1
        AND DE.created_timestamp >= Now() - interval 15 minute
-       AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%'
+       AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%%'
        AND DE.deselected_order_lines > '0'
        AND DE.org_id = 'OAH'" 
 connection="MAPRD_NEW"
@@ -117,16 +117,16 @@ SELECT DE.org_id,
        DE.deselected_order_lines,
        DE.updated_by,
        DE.created_timestamp
-FROM   default_dcorder.dco_plan_run_deselect_count DE
-       join default_dcorder.dco_order_plan_run_strategy PLA
+FROM   default_dcorder.DCO_PLAN_RUN_DESELECT_COUNT DE
+       join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA
          ON DE.order_planning_run_id = PLA.order_planning_run_id
             AND PLA.org_id = DE.org_id
-       left join default_dcorder.dco_order O
+       left join default_dcorder.DCO_ORDER O
               ON O.order_id = DE.order_id
                  AND O.org_id = DE.org_id
 WHERE  1 = 1
        AND DE.created_timestamp >= Now() - interval 15 minute
-       AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%'
+       AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%%'
        AND DE.deselected_order_lines > '0'
        AND DE.org_id = 'OAH';
 
@@ -140,16 +140,16 @@ SELECT DE.org_id,
        DE.deselected_order_lines,
        DE.updated_by,
        DE.created_timestamp
-FROM   default_dcorder.dco_plan_run_deselect_count DE
-       join default_dcorder.dco_order_plan_run_strategy PLA
+FROM   default_dcorder.DCO_PLAN_RUN_DESELECT_COUNT DE
+       join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA
          ON DE.order_planning_run_id = PLA.order_planning_run_id
             AND PLA.org_id = DE.org_id
-       left join default_dcorder.dco_order O
+       left join default_dcorder.DCO_ORDER O
               ON O.order_id = DE.order_id
                  AND O.org_id = DE.org_id
 WHERE  1 = 1
        AND DE.created_timestamp >= Now() - interval 15 minute
-       AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%'
+       AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%%'
        AND DE.deselected_order_lines > '0'
        AND DE.org_id = $orgId;
 
@@ -159,10 +159,10 @@ WHERE  1 = 1
 
 -- Query with aliases surrounded by double quotes, to be inserted into excel as part of payload after converting to string with no newlines to be value of sql property in payload.
 -- When referring to strings in SQL query, should be surrounded by single quote.
-"SELECT DE.org_id, DE.order_id, O.ext_route_id, DE.order_planning_run_id, DE.deselected_orders, DE.deselected_order_lines, DE.updated_by, DE.created_timestamp FROM   default_dcorder.dco_plan_run_deselect_count DE join default_dcorder.dco_order_plan_run_strategy PLA ON DE.order_planning_run_id = PLA.order_planning_run_id AND PLA.org_id = DE.org_id left join default_dcorder.dco_order O ON O.order_id = DE.order_id AND O.org_id = DE.org_id WHERE  1 = 1 AND DE.created_timestamp >= Now() - interval 15 minute AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%' AND DE.deselected_order_lines > '0' AND DE.org_id = $orgId;"
+"SELECT DE.org_id, DE.order_id, O.ext_route_id, DE.order_planning_run_id, DE.deselected_orders, DE.deselected_order_lines, DE.updated_by, DE.created_timestamp FROM   default_dcorder.DCO_PLAN_RUN_DESELECT_COUNT DE join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA ON DE.order_planning_run_id = PLA.order_planning_run_id AND PLA.org_id = DE.org_id left join default_dcorder.DCO_ORDER O ON O.order_id = DE.order_id AND O.org_id = DE.org_id WHERE  1 = 1 AND DE.created_timestamp >= Now() - interval 15 minute AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%%' AND DE.deselected_order_lines > '0' AND DE.org_id = $orgId;"
  
  insert into table (V)
- set payload = "SELECT DE.org_id, DE.order_id, O.ext_route_id, DE.order_planning_run_id, DE.deselected_orders, DE.deselected_order_lines, DE.updated_by, DE.created_timestamp FROM   default_dcorder.dco_plan_run_deselect_count DE join default_dcorder.dco_order_plan_run_strategy PLA ON DE.order_planning_run_id = PLA.order_planning_run_id AND PLA.org_id = DE.org_id left join default_dcorder.dco_order O ON O.order_id = DE.order_id AND O.org_id = DE.org_id WHERE  1 = 1 AND DE.created_timestamp >= Now() - interval 15 minute AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%' AND DE.deselected_order_lines > '0' AND DE.org_id = $orgId;"
+ set payload = "SELECT DE.org_id, DE.order_id, O.ext_route_id, DE.order_planning_run_id, DE.deselected_orders, DE.deselected_order_lines, DE.updated_by, DE.created_timestamp FROM   default_dcorder.DCO_PLAN_RUN_DESELECT_COUNT DE join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA ON DE.order_planning_run_id = PLA.order_planning_run_id AND PLA.org_id = DE.org_id left join default_dcorder.DCO_ORDER O ON O.order_id = DE.order_id AND O.org_id = DE.org_id WHERE  1 = 1 AND DE.created_timestamp >= Now() - interval 15 minute AND Upper(PLA.planning_strategy_id) LIKE 'STANDARD%%' AND DE.deselected_order_lines > '0' AND DE.org_id = $orgId;"
 
 
 
