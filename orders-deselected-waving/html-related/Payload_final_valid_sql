@@ -147,4 +147,4 @@ where warehouseid=(select wl.warehouseid
                     from app.warehouselocationdetail wld, app.warehouselocation wl
                     where wld.description = 'orders-deselected-waving'
                     AND wld.warehouseid = wl.warehouseid
-                    AND wl.warehouseshortname not in ('ABQ, ASH, ATL, DEN, DEFB, HAW, IND, KAP, KAU, MAU, OAH, PEN, POR'));
+                    AND wl.warehouseshortname not in ('ABQ, ASH, ATL, DEN, DFB, HAW, IND, KAP, KAU, MAU, OAH, PEN, POR'));
