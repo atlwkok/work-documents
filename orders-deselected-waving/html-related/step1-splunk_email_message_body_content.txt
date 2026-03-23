@@ -53,4 +53,12 @@ Phone: 866-RNDC-HLP (866-763-2457)
 
 
 
+// (ATL)
+The alert condition for '$name$' was triggered.
+
+
+
+
+
+
 // Unnamed queries (all other org ids)
