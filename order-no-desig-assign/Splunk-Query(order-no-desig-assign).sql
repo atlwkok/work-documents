@@ -41,12 +41,12 @@ WHERE  1 = 1
                 O.designated_shipment_id                            'SHIPMENT',
                 O.created_timestamp,
                 OLI.assigned_shipment_id
-FROM   default_dcorder.dco_original_order O
-       LEFT JOIN default_dcorder.dco_order_status MAX_STAT
+FROM   default_dcorder.DCO_ORIGINAL_ORDER O
+       LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT
               ON MAX_STAT.order_status_id = O.maximum_status
-       LEFT JOIN default_dcorder.dco_order_status MIN_STAT
+       LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT
               ON MIN_STAT.order_status_id = O.maximum_status
-       LEFT JOIN default_dcorder.dco_order_line OLI
+       LEFT JOIN default_dcorder.DCO_ORDER_LINE OLI
               ON O.original_order_id = OLI.original_order_id
                  AND O.org_id = OLI.org_id
 WHERE  1 = 1
@@ -62,13 +62,24 @@ WHERE  1 = 1
               OR OLI.assigned_shipment_id IS NULL );  
 
 
--- Sample SQL query for updating warehouselocationdetail payload column for db-lia-records-with-pack-uom table
--- update app.warehouselocationdetail set payload = '{"alertName":"LIA RECORDS WITH PACK UOM TYPE POPULATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $orgId$ + $dataSource$ + $alertName$","body":"The alert condition for ''$orgId$ + $dataSource$ + $alertName$'' was triggered.***MSP TO CLEAN UP*** Clear the PACK UOM TYPE ID and PACK UOM QUANTITY from the Location Item Assignment UI.","fromEmail":"wms-tools-no-reply@rndc-usa.com","toEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT org_id, location_id, item_id, pack_uom_type_id, pack_uom_quantity FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT WHERE 1=1 AND org_id= $orgId AND pack_uom_type_id is NOT NULL;"}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='WSD') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-lia-pack-uom');
+-- Flattening SQL query to single line (paste and copy from chrome search bar)
+ SELECT DISTINCT O.org_id,                 O.original_order_id,                 O.order_type,                 Concat(O.maximum_status, '-', MAX_STAT.description) 'MAX_STATUS',                 Concat(O.minimum_status, '-', MIN_STAT.description) 'MIN_STATUS',                 O.designated_shipment_id                            'SHIPMENT',                 O.created_timestamp,                 OLI.assigned_shipment_id FROM   default_dcorder.DCO_ORIGINAL_ORDER O        LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT               ON MAX_STAT.order_status_id = O.maximum_status        LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT               ON MIN_STAT.order_status_id = O.maximum_status        LEFT JOIN default_dcorder.DCO_ORDER_LINE OLI               ON O.original_order_id = OLI.original_order_id                  AND O.org_id = OLI.org_id WHERE  1 = 1        AND O.org_id = $orgId        AND O.order_type = 'Standard'        AND O.minimum_status < '7800'        AND OLI.status NOT IN ( 'CANCELLED' )        AND O.created_timestamp <= Now() - INTERVAL 15 minute        AND ( O.designated_shipment_id NOT IN (SELECT DISTINCT shipment_id                                               FROM              default_shipment.shp_shipment S                                               WHERE  S.org_id = O.org_id)               OR OLI.assigned_shipment_id IS NULL );
+
+-- Replacing any space > 1 size with only 1 space (in VS code, search using regex -> \s\s+ and then replace with empty value); verify with https://www.dpriver.com/pp/sqlformat.htm that it's equal to processed query
+ SELECT DISTINCT O.org_id, O.original_order_id, O.order_type, Concat(O.maximum_status, '-', MAX_STAT.description) 'MAX_STATUS', Concat(O.minimum_status, '-', MIN_STAT.description) 'MIN_STATUS', O.designated_shipment_id 'SHIPMENT', O.created_timestamp, OLI.assigned_shipment_id FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_LINE OLI ON O.original_order_id = OLI.original_order_id AND O.org_id = OLI.org_id WHERE 1 = 1 AND O.org_id = $orgId AND O.order_type = 'Standard' AND O.minimum_status < '7800' AND OLI.status NOT IN ( 'CANCELLED' ) AND O.created_timestamp <= Now() - INTERVAL 15 minute AND ( O.designated_shipment_id NOT IN (SELECT DISTINCT shipment_id FROM default_shipment.shp_shipment S WHERE S.org_id = O.org_id) OR OLI.assigned_shipment_id IS NULL );
 
 -- Query with aliases surrounded by double quotes, to be inserted into excel as part of payload after converting to string with no newlines to be value of sql property in payload.
 -- When referring to strings in SQL query, should be surrounded by single quote.
--- see order-no-desig-assign/html-related/Payload_final_valid_sql.sql for final version
+ SELECT DISTINCT O.org_id, O.original_order_id, O.order_type, Concat(O.maximum_status, ''-'', MAX_STAT.description) ''MAX_STATUS'', Concat(O.minimum_status, ''-'', MIN_STAT.description) ''MIN_STATUS'', O.designated_shipment_id ''SHIPMENT'', O.created_timestamp, OLI.assigned_shipment_id FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_LINE OLI ON O.original_order_id = OLI.original_order_id AND O.org_id = OLI.org_id WHERE 1 = 1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''7800'' AND OLI.status NOT IN ( ''CANCELLED'' ) AND O.created_timestamp <= Now() - INTERVAL 15 minute AND ( O.designated_shipment_id NOT IN (SELECT DISTINCT shipment_id FROM default_shipment.shp_shipment S WHERE S.org_id = O.org_id) OR OLI.assigned_shipment_id IS NULL );
 
 
+-- Query with table name in all caps, otherwise MySQL will not be able to find the table.
+ SELECT DISTINCT O.org_id, O.original_order_id, O.order_type, Concat(O.maximum_status, ''-'', MAX_STAT.description) ''MAX_STATUS'', Concat(O.minimum_status, ''-'', MIN_STAT.description) ''MIN_STATUS'', O.designated_shipment_id ''SHIPMENT'', O.created_timestamp, OLI.assigned_shipment_id FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_LINE OLI ON O.original_order_id = OLI.original_order_id AND O.org_id = OLI.org_id WHERE 1 = 1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''7800'' AND OLI.status NOT IN ( ''CANCELLED'' ) AND O.created_timestamp <= Now() - INTERVAL 15 minute AND ( O.designated_shipment_id NOT IN (SELECT DISTINCT shipment_id FROM default_shipment.shp_shipment S WHERE S.org_id = O.org_id) OR OLI.assigned_shipment_id IS NULL );
 
- 
+-- !!!!!!!!!!!!!!!!!!REMEMBER TO CAPITALIZE ALL TABLE NAMES OTHERWISE MYSQL WILL THROW AN ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+--  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+-- Sample SQL query for updating warehouselocationdetail payload column for db-lia-records-with-pack-uom table
+-- update app.warehouselocationdetail set payload = '{"alertName":"LIA RECORDS WITH PACK UOM TYPE POPULATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $orgId$ + $dataSource$ + $alertName$","body":"The alert condition for ''$orgId$ + $dataSource$ + $alertName$'' was triggered.***MSP TO CLEAN UP*** Clear the PACK UOM TYPE ID and PACK UOM QUANTITY from the Location Item Assignment UI.","fromEmail":"wms-tools-no-reply@rndc-usa.com","toEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT org_id, location_id, item_id, pack_uom_type_id, pack_uom_quantity FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT WHERE 1=1 AND org_id= $orgId AND pack_uom_type_id is NOT NULL;"}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='WSD') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-lia-pack-uom');
+
