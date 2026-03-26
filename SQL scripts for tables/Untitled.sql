@@ -42,4 +42,16 @@ order by crontaskid
 -- 		and not exists (select 1 from app.cronaction c2 where c2.crontaskid = c.crontaskid)
 -- 		and cat.description = 'NONE';
 
-
+insert into app.cronaction (
+		CronTaskId, CronActionTypeId, Payload, CreatedBy, LastUpdatedBy)
+	select 
+		c.crontaskid,
+		cat.CronActionTypeId,
+		'{"EmailTextOnError":"tbd","TaskName":"DB Alert: Orders No Designated Shipments","StateMachine":"wms-tools-state-machine-db-alert","Lambda":"wms-tools-lambda-db-alert","RequestType":"db-alert-order-no-desig"}',
+		'sysuser', 'sysuser'
+	from 
+		app.cronactiontype cat, app.crontasks c
+	where
+		c.description = 'DB Alert: Orders No Designated Shipments'
+		and not exists (select 1 from app.cronaction c2 where c2.crontaskid = c.crontaskid)
+		and cat.description = 'NONE';
