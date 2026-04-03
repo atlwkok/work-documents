@@ -39,7 +39,38 @@
 
 SELECT * FROM app.requesttype
 ORDER BY approute ASC 
+ 
+-- insert into app.requesttype(requesttypeid, approute, description, longdescription)
+-- 	select 
+-- 		(select max(r.requesttypeid) 
+-- 			from app.requesttype r) + 1 requesttypeid,
+-- 		57, 
+-- 		'db-alert-order-no-desig', 
+-- 		'db-alert-order-no-desig'
+-- 		where not exists (
+-- 			select 1 
+-- 			from app.requesttype r2 where r2.approute = 57 );
 
 
 
-select * from app.requesttype r2 where r2.approute =50
+-- insert into app.requesttype(requesttypeid, approute, description, longdescription)
+-- 	select 
+-- 		(select max(r.requesttypeid) 
+-- 			from app.requesttype r) + 1 requesttypeid,
+-- 		58, 
+-- 		'db-alert-order-no-desig Interactive', 
+-- 		'db-alert-order-no-desig Interactive'
+-- 		where not exists (
+-- 			select 1 
+-- 			from app.requesttype r2 where r2.approute = 58 );
+
+
+select *
+from app.requesttype
+order by approute
+
+-- select rt.requesttypeid
+-- 						from app.requesttype rt 
+-- 						where rt.description='db-alert-orders-deselected-waving'
+
+
