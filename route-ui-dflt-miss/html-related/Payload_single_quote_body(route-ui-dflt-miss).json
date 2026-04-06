@@ -23,8 +23,11 @@
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT * FROM (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END AS ''STATUS'' FROM (SELECT static_route_id, profile_id FROM default_routing.RTG_STATIC_ROUTE WHERE static_route_id = ''DFLT'' AND profile_id = ''$orgId_Org_Profile'')A)B WHERE status <> ''OK''; "
+    "sql":"SELECT * FROM   (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END   AS ''STATUS'' FROM   (SELECT static_route_id, profile_id FROM   default_routing.RTG_STATIC_ROUTE WHERE  static_route_id = ''DFLT'' AND profile_id = concat($orgId, ''_Org_Profile''))A)B WHERE  status <> ''OK'';"
 }
+
+
+
 
 
 
@@ -46,8 +49,10 @@
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT * FROM (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END AS ''STATUS'' FROM (SELECT static_route_id, profile_id FROM default_routing.RTG_STATIC_ROUTE WHERE static_route_id = ''DFLT'' AND profile_id = ''$orgId_Org_Profile'')A)B WHERE status <> ''OK''; "
+    "sql":"SELECT * FROM   (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END   AS ''STATUS'' FROM   (SELECT static_route_id, profile_id FROM   default_routing.RTG_STATIC_ROUTE WHERE  static_route_id = ''DFLT'' AND profile_id = concat($orgId, ''_Org_Profile''))A)B WHERE  status <> ''OK'';"
 }
+
+
 
 
 
@@ -70,8 +75,10 @@
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT * FROM (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END AS ''STATUS'' FROM (SELECT static_route_id, profile_id FROM default_routing.RTG_STATIC_ROUTE WHERE static_route_id = ''DFLT'' AND profile_id = ''$orgId_Org_Profile'')A)B WHERE status <> ''OK''; "
+    "sql":"SELECT * FROM   (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END   AS ''STATUS'' FROM   (SELECT static_route_id, profile_id FROM   default_routing.RTG_STATIC_ROUTE WHERE  static_route_id = ''DFLT'' AND profile_id = concat($orgId, ''_Org_Profile''))A)B WHERE  status <> ''OK'';"
 }
+
+
 
 
 
@@ -93,8 +100,10 @@
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT * FROM (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END AS ''STATUS'' FROM (SELECT static_route_id, profile_id FROM default_routing.RTG_STATIC_ROUTE WHERE static_route_id = ''DFLT'' AND profile_id = ''$orgId_Org_Profile'')A)B WHERE status <> ''OK''; "
+    "sql":"SELECT * FROM   (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END   AS ''STATUS'' FROM   (SELECT static_route_id, profile_id FROM   default_routing.RTG_STATIC_ROUTE WHERE  static_route_id = ''DFLT'' AND profile_id = concat($orgId, ''_Org_Profile''))A)B WHERE  status <> ''OK'';"
 }
+
+
 
 
 
@@ -118,8 +127,10 @@
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT * FROM (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END AS ''STATUS'' FROM (SELECT static_route_id, profile_id FROM default_routing.RTG_STATIC_ROUTE WHERE static_route_id = ''DFLT'' AND profile_id = ''$orgId_Org_Profile'')A)B WHERE status <> ''OK''; "
+    "sql":"SELECT * FROM   (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END   AS ''STATUS'' FROM   (SELECT static_route_id, profile_id FROM   default_routing.RTG_STATIC_ROUTE WHERE  static_route_id = ''DFLT'' AND profile_id = concat($orgId, ''_Org_Profile''))A)B WHERE  status <> ''OK'';"
 }
+
+
 
 
 

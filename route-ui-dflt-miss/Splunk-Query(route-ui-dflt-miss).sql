@@ -6,6 +6,7 @@
 -- Replacing variables if any see (orders-deselected-waving)
 --  (remember to append dollar sign in front of property name included in yet-to-be-inserted warehouselocationdetail payload $orgId)
 -- Escaping any special characters; for example % character must be escaped with another % right in front of it (see orders-deselected-waving)
+-- ***Remember if property name is to be surrounded by single quotes, please use concat() instead as  cursor.execute() in getAlertData in wms-api
 SELECT *
 FROM   (SELECT 'IND' AS 'WHSE',
                CASE
@@ -16,22 +17,22 @@ FROM   (SELECT 'IND' AS 'WHSE',
                        profile_id
                 FROM   default_routing.rtg_static_route
                 WHERE  static_route_id = 'DFLT'
-                       AND profile_id = '$orgId_Org_Profile')A)B
+                       AND profile_id = concat($orgId, '_Org_Profile'))A)B
 WHERE  status <> 'OK';  
 
 -- Flattening SQL query to single line (paste and copy from chrome search bar)
-SELECT * FROM   (SELECT 'IND' AS 'WHSE',                CASE                  WHEN Count(*) = '0' THEN 'MISSING DFLT STATIC ROUTE VALUE'                  ELSE 'OK'                END   AS 'STATUS'         FROM   (SELECT static_route_id,                        profile_id                 FROM   default_routing.rtg_static_route                 WHERE  static_route_id = 'DFLT'                        AND profile_id = '$orgId_Org_Profile')A)B WHERE  status <> 'OK';  
+SELECT * FROM   (SELECT 'IND' AS 'WHSE', CASE WHEN Count(*) = '0' THEN 'MISSING DFLT STATIC ROUTE VALUE' ELSE 'OK' END   AS 'STATUS' FROM   (SELECT static_route_id, profile_id FROM   default_routing.rtg_static_route WHERE  static_route_id = 'DFLT' AND profile_id = concat($orgId, '_Org_Profile'))A)B WHERE  status <> 'OK';
 
 -- Replacing any space > 1 size with only 1 space (in VS code, search using regex -> \s\s+ and then replace with single space); verify with https://www.dpriver.com/pp/sqlformat.htm that it's equal to processed query
-SELECT * FROM (SELECT 'IND' AS 'WHSE', CASE WHEN Count(*) = '0' THEN 'MISSING DFLT STATIC ROUTE VALUE' ELSE 'OK' END AS 'STATUS' FROM (SELECT static_route_id, profile_id FROM default_routing.rtg_static_route WHERE static_route_id = 'DFLT' AND profile_id = '$orgId_Org_Profile')A)B WHERE status <> 'OK'; 
+SELECT * FROM   (SELECT 'IND' AS 'WHSE', CASE WHEN Count(*) = '0' THEN 'MISSING DFLT STATIC ROUTE VALUE' ELSE 'OK' END   AS 'STATUS' FROM   (SELECT static_route_id, profile_id FROM   default_routing.rtg_static_route WHERE  static_route_id = 'DFLT' AND profile_id = concat($orgId, '_Org_Profile'))A)B WHERE  status <> 'OK';
 
 -- Query with aliases surrounded by double quotes, to be inserted into excel as part of payload after converting to string with no newlines to be value of sql property in payload.
 -- When referring to strings in SQL query, should be surrounded by single quote.
-SELECT Substr(profile_id, 1, 3) ''WHSE'', static_route_id, ext_threshold ''THRESHOLD_VALUE'' FROM default_routing.rtg_static_route WHERE ext_threshold IS NULL AND profile_id = ''$orgId_Org_Profile''; 
-SELECT * FROM (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END AS ''STATUS'' FROM (SELECT static_route_id, profile_id FROM default_routing.rtg_static_route WHERE static_route_id = ''DFLT'' AND profile_id = ''$orgId_Org_Profile'')A)B WHERE status <> ''OK''; 
+SELECT * FROM   (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END   AS ''STATUS'' FROM   (SELECT static_route_id, profile_id FROM   default_routing.rtg_static_route WHERE  static_route_id = ''DFLT'' AND profile_id = concat($orgId, ''_Org_Profile''))A)B WHERE  status <> ''OK'';
+
 
 -- Query with table name in all caps, otherwise MySQL will not be able to find the table.
- SELECT * FROM (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END AS ''STATUS'' FROM (SELECT static_route_id, profile_id FROM default_routing.RTG_STATIC_ROUTE WHERE static_route_id = ''DFLT'' AND profile_id = ''$orgId_Org_Profile'')A)B WHERE status <> ''OK''; 
+ SELECT * FROM   (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END   AS ''STATUS'' FROM   (SELECT static_route_id, profile_id FROM   default_routing.RTG_STATIC_ROUTE WHERE  static_route_id = ''DFLT'' AND profile_id = concat($orgId, ''_Org_Profile''))A)B WHERE  status <> ''OK'';
 
 -- !!!!!!!!!!!!!!!!!!REMEMBER TO CAPITALIZE ALL TABLE NAMES OTHERWISE MYSQL WILL THROW AN ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 --  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
