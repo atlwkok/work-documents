@@ -1,0 +1,137 @@
+//Named queries (enabled (only ORL, PEN, WSD as of writing) + disabled)
+//Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
+//paste into word document and then re-paste here.
+
+
+
+
+//(ORL)
+{
+    "alertName":"STATIC ROUTE UI MISSING DFLT VALUE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Garry.Martinez@rndc-usa.com, Kenny.Keenan@rndc-usa.com, STEPHEN.KING@RNDC-USA.COM",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT * FROM   (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END   AS ''STATUS'' FROM   (SELECT static_route_id, profile_id FROM   default_routing.RTG_STATIC_ROUTE WHERE  static_route_id = ''DFLT'' AND profile_id = concat($orgId, ''_Org_Profile''))A)B WHERE  status <> ''OK'';"
+}
+
+
+
+
+
+
+//(POR)
+{
+    "alertName":"STATIC ROUTE UI MISSING DFLT VALUE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT * FROM   (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END   AS ''STATUS'' FROM   (SELECT static_route_id, profile_id FROM   default_routing.RTG_STATIC_ROUTE WHERE  static_route_id = ''DFLT'' AND profile_id = concat($orgId, ''_Org_Profile''))A)B WHERE  status <> ''OK'';"
+}
+
+
+
+
+
+
+//(WSD)
+{
+    "alertName":"STATIC ROUTE UI MISSING DFLT VALUE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"demetrius.dever@rndc-usa.com,Michael.Clark@RNDC-USA.com,clarence.hall@rndc-usa.com,brian.bowen@rndc-usa.com,barbara.jackson@rndc-usa.com,rodney.williams@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT * FROM   (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END   AS ''STATUS'' FROM   (SELECT static_route_id, profile_id FROM   default_routing.RTG_STATIC_ROUTE WHERE  static_route_id = ''DFLT'' AND profile_id = concat($orgId, ''_Org_Profile''))A)B WHERE  status <> ''OK'';"
+}
+
+
+
+
+
+//(PEN)
+{
+    "alertName":"STATIC ROUTE UI MISSING DFLT VALUE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT * FROM   (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END   AS ''STATUS'' FROM   (SELECT static_route_id, profile_id FROM   default_routing.RTG_STATIC_ROUTE WHERE  static_route_id = ''DFLT'' AND profile_id = concat($orgId, ''_Org_Profile''))A)B WHERE  status <> ''OK'';"
+}
+
+
+
+
+
+
+
+//(Unnamed)
+{
+    "alertName":"STATIC ROUTE UI MISSING DFLT VALUE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT * FROM   (SELECT ''IND'' AS ''WHSE'', CASE WHEN Count(*) = ''0'' THEN ''MISSING DFLT STATIC ROUTE VALUE'' ELSE ''OK'' END   AS ''STATUS'' FROM   (SELECT static_route_id, profile_id FROM   default_routing.RTG_STATIC_ROUTE WHERE  static_route_id = ''DFLT'' AND profile_id = concat($orgId, ''_Org_Profile''))A)B WHERE  status <> ''OK'';"
+}
+
+
+
+
+
+
