@@ -1,0 +1,15 @@
+//Named queries (enabled (only ORL, PEN, WSD as of writing) + disabled)
+
+// (ORL/POR/WSD)
+The alert condition for '$name$' was triggered.
+
+***MSP TO CLEAN UP***
+Configure the necessary values in the Static Route UI
+
+
+//(PEN/Manhattan Active)
+The alert condition for '$name$' was triggered.
+
+
+//Unnamed queries
+The alert condition for '$name$' was triggered.
