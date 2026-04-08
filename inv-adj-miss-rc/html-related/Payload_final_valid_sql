@@ -1,0 +1,236 @@
+-- db-alert-routes-multi-wave.
+ 
+insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
+    select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
+        from app.warehouselocation w, app.requesttype rt 
+        where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
+        and rt.description = 'db-alert-routes-multi-wave' 
+        and not exists (select 1 from app.warehouselocationdetail r 
+                            where r.requesttypeid = rt.requesttypeid 
+                            and r.warehouseid = w.warehouseid);
+
+
+
+
+-- Named queries (enabled (only ELP, JES, LOU, PEN, POR, TAM, WSD as of writing) + disabled)
+
+-- (ELP)
+ update app.warehouselocationdetail set payload = '{
+    "alertName":"ROUTES WITH MULTIPLE WAVE NUMBERS",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Description:<br />A user has waved this route across two different wave numbers. Sortation software is not able to process a route correctly that is waved across two different WMS wave numbers.  Cases will be missing if the IT Service Desk is not called.  Please stop what you are doing immediately and call the Service Desk to correct this condition.  <br /><br />Phone: 866-RNDC-HLP (866-763-2457)<br /><br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI<br /><br /><br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"keith.thompson@rndc-usa.com ,frank.ceja@rndc-usa.com,gabriel.oporto@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":" SELECT T.org_id, T.ext_route_id, Count(DISTINCT T.wave_nbr) ''WAVE_NBR'' FROM (SELECT OL.org_id, OL.original_order_id, OL.designated_shipment_id, O.ext_route_id, OL.original_order_line_id, OL.status_change_date_time, PLA.created_timestamp, OL.original_order_planning_run_id, OL.order_planning_run_id, CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END AS ''WAVE_NBR'', OL.status FROM default_dcorder.DCO_ORDER_LINE OL join default_dcorder.DCO_ORDER O ON OL.order_id = O.order_id AND O.org_id = $orgId AND O.pipeline_id = ''RNDC_Standard_Order_Pipeline'' join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA ON ( CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END ) = PLA.order_planning_run_id WHERE 1 = 1 AND Upper(PLA.planning_strategy_id) LIKE ''%%STANDARD%%'' AND PLA.status <> ''900'' AND OL.status IN ( ''CREATED'', ''READY'', ''WORKINPROGRESS'', ''WORKCOMPLETED'' , ''ALLOCATED'', ''FAILED'', ''PACKING'', ''PACKED'', ''STAGED'', ''MANIFESTED'' ) AND OL.original_order_id IN (SELECT original_order_id FROM default_dcorder.DCO_ORDER WHERE order_type = ''Standard'') AND OL.org_id = $orgId AND ( OL.original_order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) OR OL.order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) )) T GROUP BY T.org_id, T.ext_route_id HAVING Count(DISTINCT wave_nbr) > 1; "
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='ELP') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-routes-multi-wave');
+-- (JES)
+ update app.warehouselocationdetail set payload = '{
+    "alertName":"ROUTES WITH MULTIPLE WAVE NUMBERS",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Description:<br />A user has waved this route across two different wave numbers. Sortation software is not able to process a route correctly that is waved across two different WMS wave numbers.  Cases will be missing if the IT Service Desk is not called.  Please stop what you are doing immediately and call the Service Desk to correct this condition.  <br /><br />Phone: 866-RNDC-HLP (866-763-2457)<br /><br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI<br /><br /><br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Daryl.Callahan@RNDC-USA.COM,Jerome.Sampson@RNDC-USA.COM,Keith.McKinzie@RNDC-USA.COM, Clarence.Hall@RNDC-USA.COM,  Tony.Derin@RNDC-USA.COM, Zeke.Mercer@RNDC-USA.COM,  James.Stone@rndc-usa.com, jerrell.satterfield@rndc-usa.com,  Michael.Clark@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":" SELECT T.org_id, T.ext_route_id, Count(DISTINCT T.wave_nbr) ''WAVE_NBR'' FROM (SELECT OL.org_id, OL.original_order_id, OL.designated_shipment_id, O.ext_route_id, OL.original_order_line_id, OL.status_change_date_time, PLA.created_timestamp, OL.original_order_planning_run_id, OL.order_planning_run_id, CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END AS ''WAVE_NBR'', OL.status FROM default_dcorder.DCO_ORDER_LINE OL join default_dcorder.DCO_ORDER O ON OL.order_id = O.order_id AND O.org_id = $orgId AND O.pipeline_id = ''RNDC_Standard_Order_Pipeline'' join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA ON ( CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END ) = PLA.order_planning_run_id WHERE 1 = 1 AND Upper(PLA.planning_strategy_id) LIKE ''%%STANDARD%%'' AND PLA.status <> ''900'' AND OL.status IN ( ''CREATED'', ''READY'', ''WORKINPROGRESS'', ''WORKCOMPLETED'' , ''ALLOCATED'', ''FAILED'', ''PACKING'', ''PACKED'', ''STAGED'', ''MANIFESTED'' ) AND OL.original_order_id IN (SELECT original_order_id FROM default_dcorder.DCO_ORDER WHERE order_type = ''Standard'') AND OL.org_id = $orgId AND ( OL.original_order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) OR OL.order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) )) T GROUP BY T.org_id, T.ext_route_id HAVING Count(DISTINCT wave_nbr) > 1; "
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='JES') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-routes-multi-wave');
+
+
+-- (LOU)
+ update app.warehouselocationdetail set payload = '{
+    "alertName":"ROUTES WITH MULTIPLE WAVE NUMBERS",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Description:<br />A user has waved this route across two different wave numbers. Sortation software is not able to process a route correctly that is waved across two different WMS wave numbers.  Cases will be missing if the IT Service Desk is not called.  Please stop what you are doing immediately and call the Service Desk to correct this condition.  <br /><br />Phone: 866-RNDC-HLP (866-763-2457)<br /><br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI<br /><br /><br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"frankie.troncosa@rndc-usa.com,erik.thoreson@rndc-usa.com,leroy.willis@rndc-usa.com",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":" SELECT T.org_id, T.ext_route_id, Count(DISTINCT T.wave_nbr) ''WAVE_NBR'' FROM (SELECT OL.org_id, OL.original_order_id, OL.designated_shipment_id, O.ext_route_id, OL.original_order_line_id, OL.status_change_date_time, PLA.created_timestamp, OL.original_order_planning_run_id, OL.order_planning_run_id, CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END AS ''WAVE_NBR'', OL.status FROM default_dcorder.DCO_ORDER_LINE OL join default_dcorder.DCO_ORDER O ON OL.order_id = O.order_id AND O.org_id = $orgId AND O.pipeline_id = ''RNDC_Standard_Order_Pipeline'' join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA ON ( CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END ) = PLA.order_planning_run_id WHERE 1 = 1 AND Upper(PLA.planning_strategy_id) LIKE ''%%STANDARD%%'' AND PLA.status <> ''900'' AND OL.status IN ( ''CREATED'', ''READY'', ''WORKINPROGRESS'', ''WORKCOMPLETED'' , ''ALLOCATED'', ''FAILED'', ''PACKING'', ''PACKED'', ''STAGED'', ''MANIFESTED'' ) AND OL.original_order_id IN (SELECT original_order_id FROM default_dcorder.DCO_ORDER WHERE order_type = ''Standard'') AND OL.org_id = $orgId AND ( OL.original_order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) OR OL.order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) )) T GROUP BY T.org_id, T.ext_route_id HAVING Count(DISTINCT wave_nbr) > 1; "
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='LOU') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-routes-multi-wave');
+
+-- (PEN)
+ update app.warehouselocationdetail set payload = '{
+    "alertName":"ROUTES WITH MULTIPLE WAVE NUMBERS",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":" SELECT T.org_id, T.ext_route_id, Count(DISTINCT T.wave_nbr) ''WAVE_NBR'' FROM (SELECT OL.org_id, OL.original_order_id, OL.designated_shipment_id, O.ext_route_id, OL.original_order_line_id, OL.status_change_date_time, PLA.created_timestamp, OL.original_order_planning_run_id, OL.order_planning_run_id, CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END AS ''WAVE_NBR'', OL.status FROM default_dcorder.DCO_ORDER_LINE OL join default_dcorder.DCO_ORDER O ON OL.order_id = O.order_id AND O.org_id = $orgId AND O.pipeline_id = ''RNDC_Standard_Order_Pipeline'' join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA ON ( CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END ) = PLA.order_planning_run_id WHERE 1 = 1 AND Upper(PLA.planning_strategy_id) LIKE ''%%STANDARD%%'' AND PLA.status <> ''900'' AND OL.status IN ( ''CREATED'', ''READY'', ''WORKINPROGRESS'', ''WORKCOMPLETED'' , ''ALLOCATED'', ''FAILED'', ''PACKING'', ''PACKED'', ''STAGED'', ''MANIFESTED'' ) AND OL.original_order_id IN (SELECT original_order_id FROM default_dcorder.DCO_ORDER WHERE order_type = ''Standard'') AND OL.org_id = $orgId AND ( OL.original_order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) OR OL.order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) )) T GROUP BY T.org_id, T.ext_route_id HAVING Count(DISTINCT wave_nbr) > 1; "
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='PEN') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-routes-multi-wave');
+
+-- (POR)
+ update app.warehouselocationdetail set payload = '{
+    "alertName":"ROUTES WITH MULTIPLE WAVE NUMBERS",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Description:<br />A user has waved this route across two different wave numbers. Sortation software is not able to process a route correctly that is waved across two different WMS wave numbers.  Cases will be missing if the IT Service Desk is not called.  Please stop what you are doing immediately and call the Service Desk to correct this condition.  <br /><br />Phone: 866-RNDC-HLP (866-763-2457)<br /><br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI<br /><br /><br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"bryce.meyer@rndc-usa.com, Michael.Ferdinand@Penske.com, abel.paucardelacruz@rndc-usa.com, Sara.Farrington@Penske.com, Matthew.Chavez@Penske.com,Jesse.Butler@Penske.com, Brian.Bontemps@penske.com",
+        "ccEmail":"WMSMSPSupport@rndc-usa.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":" SELECT T.org_id, T.ext_route_id, Count(DISTINCT T.wave_nbr) ''WAVE_NBR'' FROM (SELECT OL.org_id, OL.original_order_id, OL.designated_shipment_id, O.ext_route_id, OL.original_order_line_id, OL.status_change_date_time, PLA.created_timestamp, OL.original_order_planning_run_id, OL.order_planning_run_id, CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END AS ''WAVE_NBR'', OL.status FROM default_dcorder.DCO_ORDER_LINE OL join default_dcorder.DCO_ORDER O ON OL.order_id = O.order_id AND O.org_id = $orgId AND O.pipeline_id = ''RNDC_Standard_Order_Pipeline'' join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA ON ( CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END ) = PLA.order_planning_run_id WHERE 1 = 1 AND Upper(PLA.planning_strategy_id) LIKE ''%%STANDARD%%'' AND PLA.status <> ''900'' AND OL.status IN ( ''CREATED'', ''READY'', ''WORKINPROGRESS'', ''WORKCOMPLETED'' , ''ALLOCATED'', ''FAILED'', ''PACKING'', ''PACKED'', ''STAGED'', ''MANIFESTED'' ) AND OL.original_order_id IN (SELECT original_order_id FROM default_dcorder.DCO_ORDER WHERE order_type = ''Standard'') AND OL.org_id = $orgId AND ( OL.original_order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) OR OL.order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) )) T GROUP BY T.org_id, T.ext_route_id HAVING Count(DISTINCT wave_nbr) > 1; "
+}
+' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='POR') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-routes-multi-wave');
+
+-- (TAM)
+ update app.warehouselocationdetail set payload = '{
+    "alertName":"ROUTES WITH MULTIPLE WAVE NUMBERS",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Description:<br />A user has waved this route across two different wave numbers. Sortation software is not able to process a route correctly that is waved across two different WMS wave numbers.  Cases will be missing if the IT Service Desk is not called.  Please stop what you are doing immediately and call the Service Desk to correct this condition.  <br /><br />Phone: 866-RNDC-HLP (866-763-2457)<br /><br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI<br /><br /><br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"stephen.king@rndc-usa.com,doug.lepkowski@rndc-usa.com,lawrence.french@rndc-usa.com,torey.thomas@rndc-usa.com,kenneth.harms@rndc-usa.com, Eduardo.Gutierrez@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com,
+WMSMSPSupport@rndc-usa.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":" SELECT T.org_id, T.ext_route_id, Count(DISTINCT T.wave_nbr) ''WAVE_NBR'' FROM (SELECT OL.org_id, OL.original_order_id, OL.designated_shipment_id, O.ext_route_id, OL.original_order_line_id, OL.status_change_date_time, PLA.created_timestamp, OL.original_order_planning_run_id, OL.order_planning_run_id, CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END AS ''WAVE_NBR'', OL.status FROM default_dcorder.DCO_ORDER_LINE OL join default_dcorder.DCO_ORDER O ON OL.order_id = O.order_id AND O.org_id = $orgId AND O.pipeline_id = ''RNDC_Standard_Order_Pipeline'' join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA ON ( CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END ) = PLA.order_planning_run_id WHERE 1 = 1 AND Upper(PLA.planning_strategy_id) LIKE ''%%STANDARD%%'' AND PLA.status <> ''900'' AND OL.status IN ( ''CREATED'', ''READY'', ''WORKINPROGRESS'', ''WORKCOMPLETED'' , ''ALLOCATED'', ''FAILED'', ''PACKING'', ''PACKED'', ''STAGED'', ''MANIFESTED'' ) AND OL.original_order_id IN (SELECT original_order_id FROM default_dcorder.DCO_ORDER WHERE order_type = ''Standard'') AND OL.org_id = $orgId AND ( OL.original_order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) OR OL.order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) )) T GROUP BY T.org_id, T.ext_route_id HAVING Count(DISTINCT wave_nbr) > 1; "
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='TAM') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-routes-multi-wave');
+
+
+
+
+ 
+
+
+-- (WSD)
+ update app.warehouselocationdetail set payload = '{
+    "alertName":"ROUTES WITH MULTIPLE WAVE NUMBERS",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Description:<br />A user has waved this route across two different wave numbers. Sortation software is not able to process a route correctly that is waved across two different WMS wave numbers.  Cases will be missing if the IT Service Desk is not called.  Please stop what you are doing immediately and call the Service Desk to correct this condition.  <br /><br />Phone: 866-RNDC-HLP (866-763-2457)<br /><br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI<br /><br /><br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"demetrius.dever@rndc-usa.com, Michael.Clark@RNDC-USA.com,clarence.hall@rndc-usa.com,brian.bowen@rndc-usa.com,barbara.jackson@rndc-usa.com,rodney.williams@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":" SELECT T.org_id, T.ext_route_id, Count(DISTINCT T.wave_nbr) ''WAVE_NBR'' FROM (SELECT OL.org_id, OL.original_order_id, OL.designated_shipment_id, O.ext_route_id, OL.original_order_line_id, OL.status_change_date_time, PLA.created_timestamp, OL.original_order_planning_run_id, OL.order_planning_run_id, CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END AS ''WAVE_NBR'', OL.status FROM default_dcorder.DCO_ORDER_LINE OL join default_dcorder.DCO_ORDER O ON OL.order_id = O.order_id AND O.org_id = $orgId AND O.pipeline_id = ''RNDC_Standard_Order_Pipeline'' join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA ON ( CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END ) = PLA.order_planning_run_id WHERE 1 = 1 AND Upper(PLA.planning_strategy_id) LIKE ''%%STANDARD%%'' AND PLA.status <> ''900'' AND OL.status IN ( ''CREATED'', ''READY'', ''WORKINPROGRESS'', ''WORKCOMPLETED'' , ''ALLOCATED'', ''FAILED'', ''PACKING'', ''PACKED'', ''STAGED'', ''MANIFESTED'' ) AND OL.original_order_id IN (SELECT original_order_id FROM default_dcorder.DCO_ORDER WHERE order_type = ''Standard'') AND OL.org_id = $orgId AND ( OL.original_order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) OR OL.order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) )) T GROUP BY T.org_id, T.ext_route_id HAVING Count(DISTINCT wave_nbr) > 1; "
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='WSD') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-routes-multi-wave');
+
+
+-- (Unnamed)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"ROUTES WITH MULTIPLE WAVE NUMBERS",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Description:<br />A user has waved this route across two different wave numbers. Sortation software is not able to process a route correctly that is waved across two different WMS wave numbers.  Cases will be missing if the IT Service Desk is not called.  Please stop what you are doing immediately and call the Service Desk to correct this condition.  <br /><br />Phone: 866-RNDC-HLP (866-763-2457)<br /><br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI<br /><br /><br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":" SELECT T.org_id, T.ext_route_id, Count(DISTINCT T.wave_nbr) ''WAVE_NBR'' FROM (SELECT OL.org_id, OL.original_order_id, OL.designated_shipment_id, O.ext_route_id, OL.original_order_line_id, OL.status_change_date_time, PLA.created_timestamp, OL.original_order_planning_run_id, OL.order_planning_run_id, CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END AS ''WAVE_NBR'', OL.status FROM default_dcorder.DCO_ORDER_LINE OL join default_dcorder.DCO_ORDER O ON OL.order_id = O.order_id AND O.org_id = $orgId AND O.pipeline_id = ''RNDC_Standard_Order_Pipeline'' join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA ON ( CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END ) = PLA.order_planning_run_id WHERE 1 = 1 AND Upper(PLA.planning_strategy_id) LIKE ''%%STANDARD%%'' AND PLA.status <> ''900'' AND OL.status IN ( ''CREATED'', ''READY'', ''WORKINPROGRESS'', ''WORKCOMPLETED'' , ''ALLOCATED'', ''FAILED'', ''PACKING'', ''PACKED'', ''STAGED'', ''MANIFESTED'' ) AND OL.original_order_id IN (SELECT original_order_id FROM default_dcorder.DCO_ORDER WHERE order_type = ''Standard'') AND OL.org_id = $orgId AND ( OL.original_order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) OR OL.order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) )) T GROUP BY T.org_id, T.ext_route_id HAVING Count(DISTINCT wave_nbr) > 1; "
+}' 
+where warehouseid in (select wl.warehouseid
+            from app.warehouselocation wl  
+            where wl.warehouseshortname not in  ('ELP', 'JES', 'LOU', 'PEN', 'POR', 'TAM', 'WSD'))
+    and requesttypeid=(select rt.requesttypeid
+                from app.requesttype rt 
+                where rt.description='db-alert-routes-multi-wave');
+
+
+ 
