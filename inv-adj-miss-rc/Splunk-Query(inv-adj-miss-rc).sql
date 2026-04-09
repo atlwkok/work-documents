@@ -19,41 +19,40 @@ AND PE.ORG_ID = 'ARK'" connection="MAPRD_NEW"
 -- ***Remember if property name is to be surrounded by single quotes, please use concat() instead as  cursor.execute() in getAlertData in wms-api
   
 
- SELECT    pe.org_id,
-          pe.created_timestamp,
-          pe.item_id,
+ SELECT    PE.org_id,
+          PE.created_timestamp,
+          PE.item_id,
           CASE
-                    WHEN pe.adjusted_type = 'SUBTRACT' THEN -pe.quantity
-                    WHEN pe.adjusted_type = 'ADD' THEN pe.quantity
+                    WHEN PE.adjusted_type = 'SUBTRACT' THEN -PE.quantity
+                    WHEN PE.adjusted_type = 'ADD' THEN PE.quantity
           END AS 'quantity' ,
-          pe.reason_code_id ,
-          pe.sync_batch_id,
-          pe.pix_specification_id,
-          Concat(pe.status_id,'-',ps.description) 'status',
-          pe.created_by
+          PE.reason_code_id ,
+          PE.sync_batch_id,
+          PE.pix_specification_id,
+          Concat(PE.status_id,'-',PS.description) 'status',
+          PE.created_by
 FROM      default_pix.PIX_PIX_ENTRY PE
 LEFT JOIN default_pix.PIX_PIX_STATUS PS
-ON        ps.status_id = pe.status_id
-WHERE     pe.pix_specification_id = 'Inventory Adjustment'
-AND       pe.created_timestamp BETWEEN Now() + interval 15 minute AND       now() + interval 1455 minute
+ON        PS.status_id = PE.status_id
+WHERE     PE.pix_specification_id = 'Inventory Adjustment'
+AND       PE.created_timestamp BETWEEN Now() + interval 15 minute AND       now() + interval 1455 minute
 AND       reason_code_id IS NULL
-AND       pe.org_id = $orgId;
+AND       PE.org_id = $orgId;
 
 
 
 -- Flattening SQL query to single line (paste and copy from chrome search bar)
-SELECT    pe.org_id,           pe.created_timestamp,           pe.item_id,           CASE                     WHEN pe.adjusted_type = 'SUBTRACT' THEN -pe.quantity                     WHEN pe.adjusted_type = 'ADD' THEN pe.quantity           END AS 'quantity' ,           pe.reason_code_id ,           pe.sync_batch_id,           pe.pix_specification_id,           Concat(pe.status_id,'-',ps.description) 'status',           pe.created_by FROM      default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON        ps.status_id = pe.status_id WHERE     pe.pix_specification_id = 'Inventory Adjustment' AND       pe.created_timestamp BETWEEN Now() + interval 15 minute AND       now() + interval 1455 minute AND       reason_code_id IS NULL AND       pe.org_id = $orgId;
+SELECT    PE.org_id,           PE.created_timestamp,           PE.item_id,           CASE                     WHEN PE.adjusted_type = 'SUBTRACT' THEN -PE.quantity                     WHEN PE.adjusted_type = 'ADD' THEN PE.quantity           END AS 'quantity' ,           PE.reason_code_id ,           PE.sync_batch_id,           PE.pix_specification_id,           Concat(PE.status_id,'-',PS.description) 'status',           PE.created_by FROM      default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON        PS.status_id = PE.status_id WHERE     PE.pix_specification_id = 'Inventory Adjustment' AND       PE.created_timestamp BETWEEN Now() + interval 15 minute AND       now() + interval 1455 minute AND       reason_code_id IS NULL AND       PE.org_id = $orgId;
 
 -- Replacing any space > 1 size with only 1 space (in VS code, search using regex -> \s\s+ and then replace with single space); verify with https://www.dpriver.com/pp/sqlformat.htm that it's equal to processed query
-SELECT pe.org_id, pe.created_timestamp, pe.item_id, CASE WHEN pe.adjusted_type = 'SUBTRACT' THEN -pe.quantity WHEN pe.adjusted_type = 'ADD' THEN pe.quantity END AS 'quantity' , pe.reason_code_id , pe.sync_batch_id, pe.pix_specification_id, Concat(pe.status_id,'-',ps.description) 'status', pe.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON ps.status_id = pe.status_id WHERE pe.pix_specification_id = 'Inventory Adjustment' AND pe.created_timestamp BETWEEN Now() + interval 15 minute AND now() + interval 1455 minute AND reason_code_id IS NULL AND pe.org_id = $orgId;
+SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = 'SUBTRACT' THEN -PE.quantity WHEN PE.adjusted_type = 'ADD' THEN PE.quantity END AS 'quantity' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,'-',PS.description) 'status', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = 'Inventory Adjustment' AND PE.created_timestamp BETWEEN Now() + interval 15 minute AND now() + interval 1455 minute AND reason_code_id IS NULL AND PE.org_id = $orgId;
 
 -- Query with aliases surrounded by double quotes, to be inserted into excel as part of payload after converting to string with no newlines to be value of sql property in payload.
 -- When referring to strings in SQL query, should be surrounded by single quote.
-SELECT pe.org_id, pe.created_timestamp, pe.item_id, CASE WHEN pe.adjusted_type = ''SUBTRACT'' THEN -pe.quantity WHEN pe.adjusted_type = ''ADD'' THEN pe.quantity END AS ''quantity'' , pe.reason_code_id , pe.sync_batch_id, pe.pix_specification_id, Concat(pe.status_id,''-'',ps.description) ''status'', pe.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON ps.status_id = pe.status_id WHERE pe.pix_specification_id = ''Inventory Adjustment'' AND pe.created_timestamp BETWEEN Now() + interval 15 minute AND now() + interval 1455 minute AND reason_code_id IS NULL AND pe.org_id = $orgId;
+SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() + interval 15 minute AND now() + interval 1455 minute AND reason_code_id IS NULL AND PE.org_id = $orgId;
 
 -- Query with table name in all caps, otherwise MySQL will not be able to find the table.
- SELECT T.org_id, T.ext_route_id, Count(DISTINCT T.wave_nbr) ''WAVE_NBR'' FROM (SELECT OL.org_id, OL.original_order_id, OL.designated_shipment_id, O.ext_route_id, OL.original_order_line_id, OL.status_change_date_time, PLA.created_timestamp, OL.original_order_planning_run_id, OL.order_planning_run_id, CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END AS ''WAVE_NBR'', OL.status FROM default_dcorder.DCO_ORDER_LINE OL join default_dcorder.DCO_ORDER O ON OL.order_id = O.order_id AND O.org_id = $orgId AND O.pipeline_id = ''RNDC_Standard_Order_Pipeline'' join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA ON ( CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END ) = PLA.order_planning_run_id WHERE 1 = 1 AND Upper(PLA.planning_strategy_id) LIKE ''%%STANDARD%%'' AND PLA.status <> ''900'' AND OL.status IN ( ''CREATED'', ''READY'', ''WORKINPROGRESS'', ''WORKCOMPLETED'' , ''ALLOCATED'', ''FAILED'', ''PACKING'', ''PACKED'', ''STAGED'', ''MANIFESTED'' ) AND OL.original_order_id IN (SELECT original_order_id FROM default_dcorder.DCO_ORDER WHERE order_type = ''Standard'') AND OL.org_id = $orgId AND ( OL.original_order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) OR OL.order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) )) T GROUP BY T.org_id, T.ext_route_id HAVING Count(DISTINCT wave_nbr) > 1; 
-SELECT pe.org_id, pe.created_timestamp, pe.item_id, CASE WHEN pe.adjusted_type = ''SUBTRACT'' THEN -pe.quantity WHEN pe.adjusted_type = ''ADD'' THEN pe.quantity END AS ''quantity'' , pe.reason_code_id , pe.sync_batch_id, pe.pix_specification_id, Concat(pe.status_id,''-'',ps.description) ''status'', pe.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON ps.status_id = pe.status_id WHERE pe.pix_specification_id = ''Inventory Adjustment'' AND pe.created_timestamp BETWEEN Now() + interval 15 minute AND now() + interval 1455 minute AND reason_code_id IS NULL AND pe.org_id = $orgId;
+SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() + interval 15 minute AND now() + interval 1455 minute AND reason_code_id IS NULL AND PE.org_id = $orgId;
 
 -- !!!!!!!!!!!!!!!!!!REMEMBER TO CAPITALIZE ALL TABLE NAMES OTHERWISE MYSQL WILL THROW AN ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 --  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
