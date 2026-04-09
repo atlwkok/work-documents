@@ -1,43 +1,131 @@
 -- Splunk query
-| dbxquery query="SELECT PE.ORG_ID, PE.CREATED_TIMESTAMP, PE.ITEM_ID, 
-     CASE WHEN PE.ADJUSTED_TYPE = 'SUBTRACT' THEN -PE.QUANTITY 
-         WHEN PE.ADJUSTED_TYPE = 'ADD' THEN PE.QUANTITY 
-         END AS QUANTITY
-    , PE.REASON_CODE_ID ,PE.SYNC_BATCH_ID,  PE.PIX_SPECIFICATION_ID, CONCAT(PE.STATUS_ID,'-',PS.DESCRIPTION) STATUS, PE.CREATED_BY 
-FROM default_pix.PIX_PIX_ENTRY  PE
-LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.STATUS_ID = PE.STATUS_ID
-WHERE PE.PIX_SPECIFICATION_ID = 'Inventory Adjustment' 
-AND PE.CREATED_TIMESTAMP between  NOW() + INTERVAL 15 minute  and now() + interval 1455 minute 
-AND REASON_CODE_ID IS NULL 
-AND PE.ORG_ID = 'ARK'" connection="MAPRD_NEW"
-
+| dbxquery query="SELECT itlvl.warehouse, itlvl.pix_spec, itlvl.asn_no, itlvl.po_no, itlvl.po_line, itlvl.item_no, itlvl.qty, spl.rcv_qty, ( 'update pix_Trx set qty =' || ' ' || spl.rcv_qty || ',' || 'prc_status = 10, prc_time = null , prc_date = null, trx_time= ' || '''' || 121821.657 || '''' || ' ' || 'where pix_spec =' || '''' || 'ITEM_Level' || '''' || ' ' || 'and asn_no =' || '''' || itlvl.asn_no || '''' || ' ' || 'and po_no=' || '''' || itlvl.po_no || '''' || ' ' || 'and item_no =' || '''' || itlvl.item_no || '''' || 'and qty = 0' || ';' )\"UPDATE\" FROM  (SELECT DISTINCT ( warehouse ), pix_spec, asn_no, po_no, po_line, item_no, Sum(qty) AS qty FROM pix_trx WHERE 1=1 AND WAREHOUSE = 'POR' AND pix_spec = 'ITEM_Level' GROUP BY  warehouse, pix_spec, asn_no, po_no, po_line, item_no HAVING Sum(qty) = 0 ORDER BY  asn_no, po_no, po_line)itlvl JOIN  (SELECT DISTINCT( warehouse ), asn_no, po_no, po_line, item_no, Sum(abs_qty) AS \"RCV_QTY\" FROM  (SELECT warehouse, pix_spec, asn_no, po_no, po_line, item_no, CASE WHEN add_sub = 'A' THEN ( qty * 1 ) WHEN add_sub = 'S' THEN ( qty *- 1 ) END AS \"ABS_QTY\" FROM pix_trx WHERE 1=1 AND WAREHOUSE = 'POR' AND pix_spec IN ( 'SupplierReceiptId','Inventory Adjustment') ORDER BY  trx_time) fin GROUP BY  warehouse, asn_no, po_no, po_line, item_no ) spl ON itlvl.po_no = spl.po_no AND itlvl.po_line = spl.po_line AND itlvl.asn_no = spl.asn_no WHERE itlvl.qty <> spl.rcv_qty AND itlvl.asn_no NOT IN  (SELECT DISTINCT asn_no FROM  (SELECT t1.asn_no, t1.item_level_qty, t2.asn_level_qty FROM (  (SELECT asn_no, sum(qty) item_level_qty FROM pix_Trx WHERE 1=1 AND WAREHOUSE = 'POR' AND pix_spec = 'ITEM_Level' GROUP BY  asn_no ) t1 LEFT JOIN  (SELECT asn_no, sum(qty) asn_level_qty FROM pix_Trx pt WHERE 1=1 AND WAREHOUSE = 'POR' AND pix_spec = 'ASN Level' GROUP BY  asn_no ) t2 ON t2.asn_no = t1.asn_no ) WHERE t1.item_level_qty = t2.asn_level_qty ) )" connection="MAPRD_NEW"
+"
 -- Converting to SQL -
 -- Wrapping column aliases with single qutoes; no need to do the same for table aliases. (see stuck-in-created-15m)
 -- Replacing variables if any see (orders-deselected-waving)
 --  (remember to append dollar sign in front of property name included in yet-to-be-inserted warehouselocationdetail payload $orgId)
 -- Escaping any special characters; for example % character must be escaped with another % right in front of it (see orders-deselected-waving)
 -- ***Remember if property name is to be surrounded by single quotes, please use concat() instead as  cursor.execute() in getAlertData in wms-api
-  
-
- SELECT    PE.org_id,
-          PE.created_timestamp,
-          PE.item_id,
-          CASE
-                    WHEN PE.adjusted_type = 'SUBTRACT' THEN -PE.quantity
-                    WHEN PE.adjusted_type = 'ADD' THEN PE.quantity
-          END AS 'quantity' ,
-          PE.reason_code_id ,
-          PE.sync_batch_id,
-          PE.pix_specification_id,
-          Concat(PE.status_id,'-',PS.description) 'status',
-          PE.created_by
-FROM      default_pix.PIX_PIX_ENTRY PE
-LEFT JOIN default_pix.PIX_PIX_STATUS PS
-ON        PS.status_id = PE.status_id
-WHERE     PE.pix_specification_id = 'Inventory Adjustment'
-AND       PE.created_timestamp BETWEEN Now() + interval 15 minute AND       now() + interval 1455 minute
-AND       reason_code_id IS NULL
-AND       PE.org_id = $orgId;
+-- ***Remember to add query alias to all sub-queries if not complete (see item-rcpt-zero, where a "c" alias was added at the end which doesn't exist in splunk.)
+ SELECT itlvl.warehouse,
+       itlvl.pix_spec,
+       itlvl.asn_no,
+       itlvl.po_no,
+       itlvl.po_line,
+       itlvl.item_no,
+       itlvl.qty,
+       spl.rcv_qty,
+       ( 'update pix_Trx set qty ='
+         || ' '
+         || spl.rcv_qty
+         || ','
+         || 'prc_status = 10, prc_time = null , prc_date = null, trx_time= '
+         || ''''
+         || 121821.657
+         || ''''
+         || ' '
+         || 'where pix_spec ='
+         || ''''
+         || 'ITEM_Level'
+         || ''''
+         || ' '
+         || 'and asn_no ='
+         || ''''
+         || itlvl.asn_no
+         || ''''
+         || ' '
+         || 'and po_no='
+         || ''''
+         || itlvl.po_no
+         || ''''
+         || ' '
+         || 'and item_no ='
+         || ''''
+         || itlvl.item_no
+         || ''''
+         || 'and qty = 0'
+         || ';' ) "UPDATE\" (return here)******
+FROM   (SELECT DISTINCT ( warehouse ),
+                        pix_spec,
+                        asn_no,
+                        po_no,
+                        po_line,
+                        item_no,
+                        Sum(qty) AS 'qty'
+        FROM   pix_trx
+        WHERE  1 = 1
+               AND warehouse = $orgId
+               AND pix_spec = 'ITEM_Level'
+        GROUP  BY warehouse,
+                  pix_spec,
+                  asn_no,
+                  po_no,
+                  po_line,
+                  item_no
+        HAVING Sum(qty) = 0
+        ORDER  BY asn_no,
+                  po_no,
+                  po_line) itlvl
+       JOIN (SELECT DISTINCT( warehouse ),
+                            asn_no,
+                            po_no,
+                            po_line,
+                            item_no,
+                            Sum(abs_qty) AS  "RCV_QTY\" (return here)******
+             FROM   (SELECT warehouse,
+                            pix_spec,
+                            asn_no,
+                            po_no,
+                            po_line,
+                            item_no,
+                            CASE
+                              WHEN add_sub = 'A' THEN ( qty * 1 )
+                              WHEN add_sub = 'S' THEN ( qty *- 1 )
+                            END AS  "ABS_QTY\" (return here)******
+                     FROM   pix_trx
+                     WHERE  1 = 1
+                            AND warehouse = $orgId
+                            AND pix_spec IN ( 'SupplierReceiptId',
+                                              'Inventory Adjustment' )
+                     ORDER  BY trx_time) fin
+             GROUP  BY warehouse,
+                       asn_no,
+                       po_no,
+                       po_line,
+                       item_no) spl
+         ON itlvl.po_no = spl.po_no
+            AND itlvl.po_line = spl.po_line
+            AND itlvl.asn_no = spl.asn_no
+WHERE  itlvl.qty <> spl.rcv_qty
+       AND itlvl.asn_no NOT IN (SELECT DISTINCT asn_no
+                                FROM   (SELECT t1.asn_no,
+                                               t1.item_level_qty,
+                                               t2.asn_level_qty
+                                        FROM   ( (SELECT asn_no,
+                                                       Sum(qty) 'item_level_qty'
+                                                FROM   pix_trx
+                                                WHERE  1 = 1
+                                                       AND warehouse = $orgId
+                                                       AND pix_spec =
+                                                           'ITEM_Level'
+                                                GROUP  BY asn_no) t1
+                                                 LEFT JOIN (SELECT asn_no,
+                                                                   Sum(qty)
+                                                           'asn_level_qty'
+                                                            FROM   pix_trx pt
+                                                            WHERE  1 = 1
+                                                                   AND
+                                                           warehouse =
+                                                           $orgId
+                                                                   AND
+                                                           pix_spec =
+                                                           'ASN Level'
+                                                            GROUP  BY asn_no) t2
+                                                        ON t2.asn_no = t1.asn_no
+                                               )
+                                        WHERE  t1.item_level_qty =
+                                               t2.asn_level_qty) c )  
 
 
 
