@@ -1,81 +1,99 @@
--- db-alert-order-no-desig. 
-insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby)
-select rt.description, rt.description, w.warehouseid, rt.requesttypeid, 'sysuser', 'sysuser' 
-    from app.warehouselocation w, app.requesttype rt 
-    where w.warehouseshortname not in ('DEFAULTS', 'PRODEV')
-        and rt.description in ('db-alert-order-no-desig')
-        and not exists (select 1 from app.warehouselocationdetail r 
-                        where r.requesttypeid = rt.requesttypeid and r.warehouseid = w.warehouseid);
+do $$
+BEGIN
+    IF EXISTS(SELECT 1
+        FROM   information_schema.tables WHERE  table_schema = 'app' AND table_name = 'warehouselocationdetail')
+    THEN
+	
+		-- db-alert-order-no-desig. 
+        insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby)
+        select rt.description, rt.description, w.warehouseid, rt.requesttypeid, 'sysuser', 'sysuser' 
+            from app.warehouselocation w, app.requesttype rt 
+            where w.warehouseshortname not in ('DEFAULTS', 'PRODEV')
+                and rt.description in ('db-alert-order-no-desig')
+                and not exists (select 1 from app.warehouselocationdetail r 
+                                where r.requesttypeid = rt.requesttypeid and r.warehouseid = w.warehouseid);
 
 
 
 
--- Named queries (enabled (only IND, ORL, PEN, POR, WSD as of writing) + disabled)
+        -- Named queries (enabled (only IND, ORL, PEN, POR, WSD as of writing) + disabled)
 
--- (DEN)
-update app.warehouselocationdetail 
-set payload = '{"alertName":"STANDARD ORDERS W/ NO DESIGNATED SHIPMENTS CREATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $alertName$","body":"<pre>The alert condition for ''$name$'' was triggered.</pre></body>","fromEmail":"wms-tools-noreply@rndc-usa.com","toEmail":"ray.burris@rndc-usa.com,larry.ayres@rndc-usa.com,josh.gevara@rndc-usa.com,jake.obrien@rndc-usa.com, jesse.jordan@rndc-usa.com, jamia.dixon@rndc-usa.com, chuck.kehoe@rndc-usa.com","ccEmail":"WMSInternal@rndc-usa.com, WMSConsultant@rndc-usa.com , WMSMSPSupport@RNDC-USA.COM","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type , Concat(O.maximum_status,''-'',MAX_STAT.description) ''MAX_STATUS'' , Concat(O.minimum_status,''-'',MIN_STAT.description) ''MIN_STATUS'' , O.designated_shipment_id ''SHIPMENT'', O.created_timestamp FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status WHERE 1=1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''8000'' AND O.created_timestamp <= Now() - INTERVAL 15 minute AND O.designated_shipment_id NOT IN ( SELECT DISTINCT shipment_id FROM default_shipment.SHP_SHIPMENT S WHERE S.org_id = O.org_id);"}'
-where warehouseid=(select wl.warehouseid
-                    from app.warehouselocationdetail wld, app.warehouselocation wl
-                    where wld.description = 'db-alert-order-no-desig'
-                    AND wld.warehouseid = wl.warehouseid
-                    AND wl.warehouseshortname in ('DEN')); 
-
-
--- (PEN)
-update app.warehouselocationdetail 
-set payload = '{"alertName":"STANDARD ORDERS W/ NO DESIGNATED SHIPMENTS CREATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $alertName$","body":"<pre>The alert condition for ''$name$'' was triggered.</pre></body>","fromEmail":"wms-tools-noreply@rndc-usa.com","toEmail":"Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com","ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type , Concat(O.maximum_status,''-'',MAX_STAT.description) ''MAX_STATUS'' , Concat(O.minimum_status,''-'',MIN_STAT.description) ''MIN_STATUS'' , O.designated_shipment_id ''SHIPMENT'', O.created_timestamp FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status WHERE 1=1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''8000'' AND O.created_timestamp <= Now() - INTERVAL 15 minute AND O.designated_shipment_id NOT IN ( SELECT DISTINCT shipment_id FROM default_shipment.SHP_SHIPMENT S WHERE S.org_id = O.org_id);"}'
-where warehouseid=(select wl.warehouseid
-                    from app.warehouselocationdetail wld, app.warehouselocation wl
-                    where wld.description = 'db-alert-order-no-desig'
-                    AND wld.warehouseid = wl.warehouseid
-                    AND wl.warehouseshortname in ('PEN')); 
-
--- (IND)
-update app.warehouselocationdetail 
-set payload = '{"alertName":"STANDARD ORDERS W/ NO DESIGNATED SHIPMENTS CREATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $alertName$","body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Call the WMS Support Number. Without shipments, it is very hard to wave</pre>","fromEmail":"wms-tools-noreply@rndc-usa.com","toEmail":"Stanley.FitzwaterJr@rndc-usa.com, Leroy.Chambers@RNDC-USA.COM, Erik.Romero@rndc-usa.com, Michael.Clifton@RNDC-USA.COM, Raymond.Craig@RNDC-USA.COM, Patrick.Heath@rndc-usa.com, Russell.Mangel@rndc-usa.com","ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type , Concat(O.maximum_status,''-'',MAX_STAT.description) ''MAX_STATUS'' , Concat(O.minimum_status,''-'',MIN_STAT.description) ''MIN_STATUS'' , O.designated_shipment_id ''SHIPMENT'', O.created_timestamp FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status WHERE 1=1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''8000'' AND O.created_timestamp <= Now() - INTERVAL 15 minute AND O.designated_shipment_id NOT IN ( SELECT DISTINCT shipment_id FROM default_shipment.SHP_SHIPMENT S WHERE S.org_id = O.org_id);"}'
-where warehouseid=(select wl.warehouseid
-                    from app.warehouselocationdetail wld, app.warehouselocation wl
-                    where wld.description = 'db-alert-order-no-desig'
-                    AND wld.warehouseid = wl.warehouseid
-                    AND wl.warehouseshortname in ('IND')); 
-
--- (ORL)
-update app.warehouselocationdetail 
-set payload = '{"alertName":"STANDARD ORDERS W/ NO DESIGNATED SHIPMENTS CREATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $alertName$","body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Call the WMS Support Number. Without shipments, it is very hard to wave</pre>","fromEmail":"wms-tools-noreply@rndc-usa.com","toEmail":"Garry.Martinez@rndc-usa.com, Kenny.Keenan@rndc-usa.com, STEPHEN.KING@RNDC-USA.COM","ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type , Concat(O.maximum_status,''-'',MAX_STAT.description) ''MAX_STATUS'' , Concat(O.minimum_status,''-'',MIN_STAT.description) ''MIN_STATUS'' , O.designated_shipment_id ''SHIPMENT'', O.created_timestamp FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status WHERE 1=1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''8000'' AND O.created_timestamp <= Now() - INTERVAL 15 minute AND O.designated_shipment_id NOT IN ( SELECT DISTINCT shipment_id FROM default_shipment.SHP_SHIPMENT S WHERE S.org_id = O.org_id);"}'
-where warehouseid=(select wl.warehouseid
-                    from app.warehouselocationdetail wld, app.warehouselocation wl
-                    where wld.description = 'db-alert-order-no-desig'
-                    AND wld.warehouseid = wl.warehouseid
-                    AND wl.warehouseshortname in ('ORL')); 
-
--- (WSD)
-update app.warehouselocationdetail 
-set payload = '{"alertName":"STANDARD ORDERS W/ NO DESIGNATED SHIPMENTS CREATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $alertName$","body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Call the WMS Support Number. Without shipments, it is very hard to wave</pre>","fromEmail":"wms-tools-noreply@rndc-usa.com","toEmail":"demetrius.dever@rndc-usa.com,Michael.Clark@RNDC-USA.com,clarence.hall@rndc-usa.com,brian.bowen@rndc-usa.com,barbara.jackson@rndc-usa.com,rodney.williams@rndc-usa.com","ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type , Concat(O.maximum_status,''-'',MAX_STAT.description) ''MAX_STATUS'' , Concat(O.minimum_status,''-'',MIN_STAT.description) ''MIN_STATUS'' , O.designated_shipment_id ''SHIPMENT'', O.created_timestamp FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status WHERE 1=1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''8000'' AND O.created_timestamp <= Now() - INTERVAL 15 minute AND O.designated_shipment_id NOT IN ( SELECT DISTINCT shipment_id FROM default_shipment.SHP_SHIPMENT S WHERE S.org_id = O.org_id);"}'
-where warehouseid=(select wl.warehouseid
-                    from app.warehouselocationdetail wld, app.warehouselocation wl
-                    where wld.description = 'db-alert-order-no-desig'
-                    AND wld.warehouseid = wl.warehouseid
-                    AND wl.warehouseshortname in ('WSD')); 
-
--- (POR)
-update app.warehouselocationdetail 
-set payload = '{"alertName":"STANDARD ORDERS W/ NO DESIGNATED SHIPMENTS CREATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $alertName$","body":"<pre>The alert condition for ''$name$'' was triggered.<br />***MSP TO CLEAN UP***  Call the ServiceDesk to correct this condition.  866-RNDC-HLP (866-763-2457).  Routed orders cannot be waved without shipments.</pre></body>","fromEmail":"wms-tools-noreply@rndc-usa.com","toEmail":"bryce.meyer@rndc-usa.com, Michael.Ferdinand@Penske.com, abel.paucardelacruz@rndc-usa.com, Sara.Farrington@Penske.com, Matthew.Chavez@Penske.com,Jesse.Butler@Penske.com, Brian.Bontemps@penske.com","ccEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type , Concat(O.maximum_status,''-'',MAX_STAT.description) ''MAX_STATUS'' , Concat(O.minimum_status,''-'',MIN_STAT.description) ''MIN_STATUS'' , O.designated_shipment_id ''SHIPMENT'', O.created_timestamp FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status WHERE 1=1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''8000'' AND O.created_timestamp <= Now() - INTERVAL 15 minute AND O.designated_shipment_id NOT IN ( SELECT DISTINCT shipment_id FROM default_shipment.SHP_SHIPMENT S WHERE S.org_id = O.org_id);"}'
-where warehouseid=(select wl.warehouseid
-                    from app.warehouselocationdetail wld, app.warehouselocation wl
-                    where wld.description = 'db-alert-order-no-desig'
-                    AND wld.warehouseid = wl.warehouseid
-                    AND wl.warehouseshortname in ('POR')); 
+        -- (DEN)
+        update app.warehouselocationdetail 
+        set payload = '{"alertName":"STANDARD ORDERS W/ NO DESIGNATED SHIPMENTS CREATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $alertName$","body":"<pre>The alert condition for ''$name$'' was triggered.</pre></body>","fromEmail":"wms-tools-noreply@rndc-usa.com","toEmail":"ray.burris@rndc-usa.com,larry.ayres@rndc-usa.com,josh.gevara@rndc-usa.com,jake.obrien@rndc-usa.com, jesse.jordan@rndc-usa.com, jamia.dixon@rndc-usa.com, chuck.kehoe@rndc-usa.com","ccEmail":"WMSInternal@rndc-usa.com, WMSConsultant@rndc-usa.com , WMSMSPSupport@RNDC-USA.COM","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type , Concat(O.maximum_status,''-'',MAX_STAT.description) ''MAX_STATUS'' , Concat(O.minimum_status,''-'',MIN_STAT.description) ''MIN_STATUS'' , O.designated_shipment_id ''SHIPMENT'', O.created_timestamp FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status WHERE 1=1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''8000'' AND O.created_timestamp <= Now() - INTERVAL 15 minute AND O.designated_shipment_id NOT IN ( SELECT DISTINCT shipment_id FROM default_shipment.SHP_SHIPMENT S WHERE S.org_id = O.org_id);"}'
+        where warehouseid=(select wl.warehouseid
+                            from app.warehouselocation wl  
+                            where wl.warehouseshortname in ('DEN'))
+            and requesttypeid=(select rt.requesttypeid
+                                from app.requesttype rt 
+                                where rt.description='db-alert-order-no-desig');
 
 
+        -- (PEN)
+        update app.warehouselocationdetail 
+        set payload = '{"alertName":"STANDARD ORDERS W/ NO DESIGNATED SHIPMENTS CREATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $alertName$","body":"<pre>The alert condition for ''$name$'' was triggered.</pre></body>","fromEmail":"wms-tools-noreply@rndc-usa.com","toEmail":"Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com","ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type , Concat(O.maximum_status,''-'',MAX_STAT.description) ''MAX_STATUS'' , Concat(O.minimum_status,''-'',MIN_STAT.description) ''MIN_STATUS'' , O.designated_shipment_id ''SHIPMENT'', O.created_timestamp FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status WHERE 1=1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''8000'' AND O.created_timestamp <= Now() - INTERVAL 15 minute AND O.designated_shipment_id NOT IN ( SELECT DISTINCT shipment_id FROM default_shipment.SHP_SHIPMENT S WHERE S.org_id = O.org_id);"}'
+        where warehouseid=(select wl.warehouseid
+                            from app.warehouselocation wl  
+                            where wl.warehouseshortname in ('PEN'))
+            and requesttypeid=(select rt.requesttypeid
+                                from app.requesttype rt 
+                                where rt.description='db-alert-order-no-desig');
 
--- (Unnamed queries - all other orgIds)
-update app.warehouselocationdetail 
-set payload = '{"alertName":"STANDARD ORDERS W/ NO DESIGNATED SHIPMENTS CREATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $alertName$","body":"<pre>The alert condition for ''$name$'' was triggered.</pre>","fromEmail":"wms-tools-noreply@rndc-usa.com","toEmail":"","ccEmail":"WMSInternal@rndc-usa.com, WMSConsultant@rndc-usa.com , WMSMSPSupport@RNDC-USA.COM","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type , Concat(O.maximum_status,''-'',MAX_STAT.description) ''MAX_STATUS'' , Concat(O.minimum_status,''-'',MIN_STAT.description) ''MIN_STATUS'' , O.designated_shipment_id ''SHIPMENT'', O.created_timestamp FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status WHERE 1=1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''8000'' AND O.created_timestamp <= Now() - INTERVAL 15 minute AND O.designated_shipment_id NOT IN ( SELECT DISTINCT shipment_id FROM default_shipment.SHP_SHIPMENT S WHERE S.org_id = O.org_id);"}'
-where warehouseid in (select wl.warehouseid
-                    from app.warehouselocationdetail wld, app.warehouselocation wl
-                    where wld.description = 'db-alert-order-no-desig'
-                    AND wld.warehouseid = wl.warehouseid
-                    AND wl.warehouseshortname not in ('DEN', 'PEN', 'IND', 'ORL', 'WSD', 'POR'));
+        -- (IND)
+        update app.warehouselocationdetail 
+        set payload = '{"alertName":"STANDARD ORDERS W/ NO DESIGNATED SHIPMENTS CREATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $alertName$","body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Call the WMS Support Number. Without shipments, it is very hard to wave</pre>","fromEmail":"wms-tools-noreply@rndc-usa.com","toEmail":"Stanley.FitzwaterJr@rndc-usa.com, Leroy.Chambers@RNDC-USA.COM, Erik.Romero@rndc-usa.com, Michael.Clifton@RNDC-USA.COM, Raymond.Craig@RNDC-USA.COM, Patrick.Heath@rndc-usa.com, Russell.Mangel@rndc-usa.com","ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type , Concat(O.maximum_status,''-'',MAX_STAT.description) ''MAX_STATUS'' , Concat(O.minimum_status,''-'',MIN_STAT.description) ''MIN_STATUS'' , O.designated_shipment_id ''SHIPMENT'', O.created_timestamp FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status WHERE 1=1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''8000'' AND O.created_timestamp <= Now() - INTERVAL 15 minute AND O.designated_shipment_id NOT IN ( SELECT DISTINCT shipment_id FROM default_shipment.SHP_SHIPMENT S WHERE S.org_id = O.org_id);"}'
+        where warehouseid=(select wl.warehouseid
+                            from app.warehouselocation wl  
+                            where wl.warehouseshortname in ('IND'))
+            and requesttypeid=(select rt.requesttypeid
+                                from app.requesttype rt 
+                                where rt.description='db-alert-order-no-desig');
+
+        -- (ORL)
+        update app.warehouselocationdetail 
+        set payload = '{"alertName":"STANDARD ORDERS W/ NO DESIGNATED SHIPMENTS CREATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $alertName$","body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Call the WMS Support Number. Without shipments, it is very hard to wave</pre>","fromEmail":"wms-tools-noreply@rndc-usa.com","toEmail":"Garry.Martinez@rndc-usa.com, Kenny.Keenan@rndc-usa.com, STEPHEN.KING@RNDC-USA.COM","ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type , Concat(O.maximum_status,''-'',MAX_STAT.description) ''MAX_STATUS'' , Concat(O.minimum_status,''-'',MIN_STAT.description) ''MIN_STATUS'' , O.designated_shipment_id ''SHIPMENT'', O.created_timestamp FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status WHERE 1=1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''8000'' AND O.created_timestamp <= Now() - INTERVAL 15 minute AND O.designated_shipment_id NOT IN ( SELECT DISTINCT shipment_id FROM default_shipment.SHP_SHIPMENT S WHERE S.org_id = O.org_id);"}'
+        where warehouseid=(select wl.warehouseid
+                            from app.warehouselocation wl  
+                            where wl.warehouseshortname in ('ORL'))
+            and requesttypeid=(select rt.requesttypeid
+                                from app.requesttype rt 
+                                where rt.description='db-alert-order-no-desig');
+
+        -- (WSD)
+        update app.warehouselocationdetail 
+        set payload = '{"alertName":"STANDARD ORDERS W/ NO DESIGNATED SHIPMENTS CREATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $alertName$","body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Call the WMS Support Number. Without shipments, it is very hard to wave</pre>","fromEmail":"wms-tools-noreply@rndc-usa.com","toEmail":"demetrius.dever@rndc-usa.com,Michael.Clark@RNDC-USA.com,clarence.hall@rndc-usa.com,brian.bowen@rndc-usa.com,barbara.jackson@rndc-usa.com,rodney.williams@rndc-usa.com","ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type , Concat(O.maximum_status,''-'',MAX_STAT.description) ''MAX_STATUS'' , Concat(O.minimum_status,''-'',MIN_STAT.description) ''MIN_STATUS'' , O.designated_shipment_id ''SHIPMENT'', O.created_timestamp FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status WHERE 1=1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''8000'' AND O.created_timestamp <= Now() - INTERVAL 15 minute AND O.designated_shipment_id NOT IN ( SELECT DISTINCT shipment_id FROM default_shipment.SHP_SHIPMENT S WHERE S.org_id = O.org_id);"}'
+        where warehouseid=(select wl.warehouseid
+                            from app.warehouselocation wl  
+                            where wl.warehouseshortname in ('WSD'))
+            and requesttypeid=(select rt.requesttypeid
+                                from app.requesttype rt 
+                                where rt.description='db-alert-order-no-desig');
+
+        -- (POR)
+        update app.warehouselocationdetail 
+        set payload = '{"alertName":"STANDARD ORDERS W/ NO DESIGNATED SHIPMENTS CREATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $alertName$","body":"<pre>The alert condition for ''$name$'' was triggered.<br />***MSP TO CLEAN UP***  Call the ServiceDesk to correct this condition.  866-RNDC-HLP (866-763-2457).  Routed orders cannot be waved without shipments.</pre></body>","fromEmail":"wms-tools-noreply@rndc-usa.com","toEmail":"bryce.meyer@rndc-usa.com, Michael.Ferdinand@Penske.com, abel.paucardelacruz@rndc-usa.com, Sara.Farrington@Penske.com, Matthew.Chavez@Penske.com,Jesse.Butler@Penske.com, Brian.Bontemps@penske.com","ccEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type , Concat(O.maximum_status,''-'',MAX_STAT.description) ''MAX_STATUS'' , Concat(O.minimum_status,''-'',MIN_STAT.description) ''MIN_STATUS'' , O.designated_shipment_id ''SHIPMENT'', O.created_timestamp FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status WHERE 1=1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''8000'' AND O.created_timestamp <= Now() - INTERVAL 15 minute AND O.designated_shipment_id NOT IN ( SELECT DISTINCT shipment_id FROM default_shipment.SHP_SHIPMENT S WHERE S.org_id = O.org_id);"}'
+        where warehouseid=(select wl.warehouseid
+                            from app.warehouselocation wl  
+                            where wl.warehouseshortname in ('POR'))
+            and requesttypeid=(select rt.requesttypeid
+                                from app.requesttype rt 
+                                where rt.description='db-alert-order-no-desig');
 
 
+
+        -- (Unnamed queries - all other orgIds)
+        update app.warehouselocationdetail 
+        set payload = '{"alertName":"STANDARD ORDERS W/ NO DESIGNATED SHIPMENTS CREATED","dataSource":"MAWM","database":{"connection":"MAPRD_NEW","type":"MySQL","uri":"jdbc:{host}:{port}/information_schema"},"email":{"subject":"Splunk Alert: $alertName$","body":"<pre>The alert condition for ''$name$'' was triggered.</pre>","fromEmail":"wms-tools-noreply@rndc-usa.com","toEmail":"WMSInternal@rndc-usa.com, WMSConsultant@rndc-usa.com , WMSMSPSupport@RNDC-USA.COM","ccEmail":"","footer":"","attachment":["link-to-alert","link-to-results","inline-table"]},"sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type , Concat(O.maximum_status,''-'',MAX_STAT.description) ''MAX_STATUS'' , Concat(O.minimum_status,''-'',MIN_STAT.description) ''MIN_STATUS'' , O.designated_shipment_id ''SHIPMENT'', O.created_timestamp FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS MAX_STAT ON MAX_STAT.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_STATUS MIN_STAT ON MIN_STAT.order_status_id = O.maximum_status WHERE 1=1 AND O.org_id = $orgId AND O.order_type = ''Standard'' AND O.minimum_status < ''8000'' AND O.created_timestamp <= Now() - INTERVAL 15 minute AND O.designated_shipment_id NOT IN ( SELECT DISTINCT shipment_id FROM default_shipment.SHP_SHIPMENT S WHERE S.org_id = O.org_id);"}'
+        where warehouseid in (select wl.warehouseid
+                    from app.warehouselocation wl  
+                    where wl.warehouseshortname not in  ('DEN', 'PEN', 'IND', 'ORL', 'WSD', 'POR'))
+            and requesttypeid=(select rt.requesttypeid
+                        from app.requesttype rt 
+                        where rt.description='db-alert-order-no-desig');
+
+
+
+
+	END IF;
+END
+$$

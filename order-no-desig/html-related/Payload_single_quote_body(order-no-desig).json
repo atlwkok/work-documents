@@ -117,8 +117,8 @@
         "subject": "Splunk Alert: $alertName$",
         "body": "<pre>The alert condition for ''$name$'' was triggered.</pre>",
         "fromEmail": "wms-tools-noreply@rndc-usa.com",
-        "toEmail": "",
-        "ccEmail": "WMSInternal@rndc-usa.com, WMSConsultant@rndc-usa.com , WMSMSPSupport@RNDC-USA.COM",
+        "toEmail": "WMSInternal@rndc-usa.com, WMSConsultant@rndc-usa.com , WMSMSPSupport@RNDC-USA.COM",
+        "ccEmail": "",
         "footer": "",
         "attachment": [
             "link-to-alert",
