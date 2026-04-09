@@ -1,0 +1,11 @@
+//Named queries (enabled (only ARK, ELP, JES, LIV, LOU, PEN, POR, ROM, SIO, TAM, as of writing) + disabled)
+
+// (ARK/ELP/JES/LIV/LOU/PEN/POR/ROM/SIO/TAM)
+The alert condition for '$name$' was triggered.
+
+***MSP TO CLEAN UP***
+ 
+//Unnamed queries
+The alert condition for '$name$' was triggered.
+
+***MSP TO CLEAN UP***

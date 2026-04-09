@@ -1,43 +1,4 @@
 
--- do $$
--- BEGIN
- 
--- 	END IF;
-
-
-
-
-
- 
- 
-SELECT * 
-FROM app.warehouselocationdetail wld JOIN app.warehouselocation wl ON wld.warehouseid = wl.warehouseid 
-WHERE wld.requesttypeid = (select rt.requesttypeid 
-                            from app.requesttype rt 
-                            where rt.description = 'db-alert-inv-adj-miss-rc') 
-                                AND wl.warehouseshortname = 'ATL' 
-ORDER BY warehousedetailid ASC
-
-
-SELECT *
-FROM APP.WAREHOUSELOCATIONDETAIL
-
-select * 
-from app.warehouselocationdetail wld join app.warehouselocation wl on wld.warehouseid = wl.warehouseid
-where description ='db-alert-inv-adj-miss-rc'  and payload is not null
-order by wld.description asc, wld.warehouseid asc;
-
-select *
-from app.warehouselocationdetail
-order by requesttypeid
-
-
-SELECT *
-FROM APP.WAREHOUSELOCATIONDETAIL wld join app.warehouselocation wl
-	on wld.warehouseid = wl.warehouseid
-WHERE wld.REQUESTTYPEID=71
-
-	and wl.warehouseshortname = 'ELP' 
 
 
 
@@ -400,39 +361,6 @@ FROM (
 ) t 
 where (payload::jsonb IS NOT NULL);
 
-
-
--- Update payload for PEN warehouse (original sql)
-	update app.warehouselocationdetail 
-	set payload = 
-	'{"alertName": "MISSING ITEM LEVEL VERIFICATION PIX",
-        "dataSource": "MAWM",
-        "database": {
-            "connection": "MAWM_SOA_PRD",
-            "type": "Oracle",
-            "uri": "jdbc:{host}:{port}/information_schema"
-        },
-        "email": {
-            "subject": "Splunk Alert: $name$",
-            "body": "<pre>The alert condition for ''$name$'' was triggered.<br><br>Note: Manhattan case 8484820 is opened for this.<br><br>MSP Team,<br>Please see the attached email and how I cleaned this up with screenshots for reference.<br><br>MSP TO CLEAN UP<br><br>Clean Up Steps:<br><br>1) Update ASN Back to Receiving Status : POST {{app_host}}/receiving/api/receiving/asn/save<br>{<br> \"AsnId\": \"XXXXXXXXX\",<br> \"AsnStatus\": \"3000\"<br>}<br>2) Verify ASN is \"In Receiving\" status in the UI.<br>3) Add the PO Back to the ASN.<br>a) From the ASN''s UI select the replated Link for Receipts to See the PO/PO''s that were attached to the ASN.<br>b) Go to the ASN''s UI and select the Assign/Unassign PO Lines to ASN option<br>c) Enter your PO Numbers and Search for the PO and Lines<br>d) Select all lines and add hit Add to ASN<br>e) Hit Save and Finish<br>f) PO Lines are now assigned back to the ASN, Verify in the ASN''s UI<br>4) Update the Verification Attempt Field on the ASN back to \"false\" using the API : POST {{app_host}}/receiving/api/receiving/asn/save<br>{<br> \"AsnId\": \"XXXXXXXXX\",<br> \"VerificationAttempted\": false<br>}<br>5) Verify the ASN in the ASN''s UI, Accept any Variances that May exist<br>6) Check to make sure the New Pix Transactions were created in the Middleware Staging DB. select * from pix_trx where asn_no = ''XXXXXXXX'' and created_dttm > sysdate -.25</pre>",
-            "fromEmail": "wms-tools-noreply@rndc-usa.com",
-            "toEmail": "wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com, wmsconsultant@rndc-usa.com",
-            "ccEmail": "",
-            "footer": "",
-            "attachment": ["link-to-alert", "link-to-results", "inline-table"]
-        },
-        "sql": "select pt.warehouse, pt.asn_no asn_number, listagg(po.po_no, '' , '') within group (order by pt.asn_no) purchase_orders, pt.pixid, pt.created_dttm from $orgId_wmsods.pix_trx pt left join (select distinct po_no, asn_no from $orgId_wmsods.pix_trx t2 where pix_spec = ''SupplierReceiptId'') po on po.asn_no = pt.asn_no where pt.pix_spec = ''ASN Level'' and pt.asn_no not in (select asn_no from $orgId_wmsods.pix_trx where pix_spec = ''ITEM_Level'') and created_dttm >= sysdate -1 group by pt.asn_no, created_dttm, warehouse, pixid"
-    }' 
-	where warehouseid = (
-		select w.warehouseid 
-		from app.warehouselocation w 
-		where w.warehouseshortname='PEN'
-	) 
-	and requesttypeid = (
-		select rt.requesttypeid 
-		from app.requesttype rt 
-		where rt.description='db-alert-miss-item-verif'
-	);
 
 
 -- Acceptance criteria - no issues when running this:

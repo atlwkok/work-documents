@@ -159,8 +159,7 @@ insert into app.warehouselocationdetail(description, longdescription, warehousei
         "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Description:<br />A user has waved this route across two different wave numbers. Sortation software is not able to process a route correctly that is waved across two different WMS wave numbers.  Cases will be missing if the IT Service Desk is not called.  Please stop what you are doing immediately and call the Service Desk to correct this condition.  <br /><br />Phone: 866-RNDC-HLP (866-763-2457)<br /><br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI<br /><br /><br /></pre>",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
         "toEmail":"stephen.king@rndc-usa.com,doug.lepkowski@rndc-usa.com,lawrence.french@rndc-usa.com,torey.thomas@rndc-usa.com,kenneth.harms@rndc-usa.com, Eduardo.Gutierrez@rndc-usa.com",
-        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com,
-WMSMSPSupport@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com,WMSMSPSupport@rndc-usa.com",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },

@@ -66,8 +66,7 @@
         "subject":"Splunk Alert: $name$",
         "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"Richard.Chamberlain2@RNDC-USA.COM, Keith.McKinzie@RNDC-USA.COM, 
-Tony.Derin@RNDC-USA.COM, Zeke.Mercer@RNDC-USA.COM, Constant.Kellam@RNDC-USA.COM,Jose.Moreno@RNDC-USA.COM, James.Stone@rndc-usa.com, Michael.Clark@rndc-usa.com",
+        "toEmail":"Richard.Chamberlain2@RNDC-USA.COM, Keith.McKinzie@RNDC-USA.COM, Tony.Derin@RNDC-USA.COM, Zeke.Mercer@RNDC-USA.COM, Constant.Kellam@RNDC-USA.COM,Jose.Moreno@RNDC-USA.COM, James.Stone@rndc-usa.com, Michael.Clark@rndc-usa.com",
         "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
@@ -246,7 +245,7 @@ Tony.Derin@RNDC-USA.COM, Zeke.Mercer@RNDC-USA.COM, Constant.Kellam@RNDC-USA.COM,
         "subject":"Splunk Alert: $name$",
         "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"",
+        "toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
         "ccEmail":"",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
