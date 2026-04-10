@@ -1,34 +1,21 @@
--- //Named queries (enabled only - ARK, PEN, POR, WSD, HAW, KAP, KAU, LIV, LOU, MAU, OAH as of writing)
--- //Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
--- //paste into word document and then re-paste here.
--- //REMEMBER TO REMOVE ANY LINE BREAKS, AND VALIDATE FROMEAMAIL/TOEMAIL/CCEMAIL/ATTACHMENT VALUES 
--- // AND EXECUTE json conversion script for payload below for this db-alert to ensure it was inserted correctly!
--- //SELECT *
--- // FROM (
--- //     SELECT 
--- //         wd.*, 
--- //         row_number() OVER () AS rn
--- //     FROM app.warehouselocationdetail wd
--- // ) t
--- // WHERE rn between 6 and 7
--- // AND (payload::jsonb IS NOT NULL);
---  db-alert-waves-long-abort.
- 
-insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
-    select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
-        from app.warehouselocation w, app.requesttype rt 
-        where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
-        and rt.description = 'db-alert-waves-long-abort' 
-        and not exists (select 1 from app.warehouselocationdetail r 
-                            where r.requesttypeid = rt.requesttypeid 
-                            and r.warehouseid = w.warehouseid);
+//Named queries (enabled only - ARK, PEN, POR, WSD, HAW, KAP, KAU, LIV, LOU, MAU, OAH as of writing)
+//Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
+//paste into word document and then re-paste here.
+//REMEMBER TO REMOVE ANY LINE BREAKS, AND VALIDATE FROMEAMAIL/TOEMAIL/CCEMAIL/ATTACHMENT VALUES 
+// AND EXECUTE json conversion script for payload below for this db-alert to ensure it was inserted correctly!
+//SELECT *
+// FROM (
+//     SELECT 
+//         wd.*, 
+//         row_number() OVER () AS rn
+//     FROM app.warehouselocationdetail wd
+// ) t
+// WHERE rn between 6 and 7
+// AND (payload::jsonb IS NOT NULL);
 
 
-
-
--- Named queries (enabled only - ARK, PEN, POR, WSD, HAW, KAP, KAU, LIV, LOU, MAU, OAH as of writing)
--- (ARK)
-update app.warehouselocationdetail set payload = '{
+// (ARK)
+{
     "alertName":"LONG RUNNING OR ABORTED WAVES",
     "dataSource":"MAWM",
     "database":{
@@ -46,12 +33,12 @@ update app.warehouselocationdetail set payload = '{
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
     "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='ARK') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-waves-long-abort');
+}
 
 
+// (PEN)
 
--- (PEN)
-update app.warehouselocationdetail set payload = '{
+{
     "alertName":"LONG RUNNING OR ABORTED WAVES",
     "dataSource":"MAWM",
     "database":{
@@ -69,13 +56,11 @@ update app.warehouselocationdetail set payload = '{
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
     "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='PEN') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-waves-long-abort');
+}
 
 
-
-
--- (POR)
-update app.warehouselocationdetail set payload = '{
+// (POR)
+{
     "alertName":"LONG RUNNING OR ABORTED WAVES",
     "dataSource":"MAWM",
     "database":{
@@ -93,11 +78,11 @@ update app.warehouselocationdetail set payload = '{
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
     "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='POR') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-waves-long-abort');
+}
 
 
--- (WSD)
-update app.warehouselocationdetail set payload = '{
+// (WSD)
+{
     "alertName":"LONG RUNNING OR ABORTED WAVES",
     "dataSource":"MAWM",
     "database":{
@@ -115,11 +100,11 @@ update app.warehouselocationdetail set payload = '{
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
     "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='WSD') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-waves-long-abort');
+}
 
 
--- (HAW)
-update app.warehouselocationdetail set payload = '{
+// (HAW)
+{
     "alertName":"LONG RUNNING OR ABORTED WAVES",
     "dataSource":"MAWM",
     "database":{
@@ -137,11 +122,11 @@ update app.warehouselocationdetail set payload = '{
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
     "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='HAW') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-waves-long-abort');
+}
 
 
--- (KAP)
-update app.warehouselocationdetail set payload = '{
+// (KAP)
+{
     "alertName":"LONG RUNNING OR ABORTED WAVES",
     "dataSource":"MAWM",
     "database":{
@@ -159,12 +144,11 @@ update app.warehouselocationdetail set payload = '{
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
     "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='KAP') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-waves-long-abort');
+}
 
 
--- (KAU)
-
-update app.warehouselocationdetail set payload = '{
+// (KAU)
+{
     "alertName":"LONG RUNNING OR ABORTED WAVES",
     "dataSource":"MAWM",
     "database":{
@@ -182,12 +166,13 @@ update app.warehouselocationdetail set payload = '{
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
     "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='KAU') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-waves-long-abort');
+}
 
 
 
--- (LIV)
-update app.warehouselocationdetail set payload = '{
+
+// (LIV)
+{
     "alertName":"LONG RUNNING OR ABORTED WAVES",
     "dataSource":"MAWM",
     "database":{
@@ -205,12 +190,11 @@ update app.warehouselocationdetail set payload = '{
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
     "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='LIV') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-waves-long-abort');
+}
 
 
-
--- (LOU)
-update app.warehouselocationdetail set payload = '{
+//(LOU)
+{
     "alertName":"LONG RUNNING OR ABORTED WAVES",
     "dataSource":"MAWM",
     "database":{
@@ -228,11 +212,14 @@ update app.warehouselocationdetail set payload = '{
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
     "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='LOU') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-waves-long-abort');
+}
 
 
--- (MAU)
-update app.warehouselocationdetail set payload = '{
+
+
+
+// (MAU)
+{
     "alertName":"LONG RUNNING OR ABORTED WAVES",
     "dataSource":"MAWM",
     "database":{
@@ -250,11 +237,13 @@ update app.warehouselocationdetail set payload = '{
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
     "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='MAU') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-waves-long-abort');
+}
 
 
--- (OAH)
-update app.warehouselocationdetail set payload = '{
+
+// (OAH)
+
+{
     "alertName":"LONG RUNNING OR ABORTED WAVES",
     "dataSource":"MAWM",
     "database":{
@@ -272,13 +261,20 @@ update app.warehouselocationdetail set payload = '{
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
     "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='OAH') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-waves-long-abort');
+}
 
 
 
 
--- (Unnamed)
-update app.warehouselocationdetail set payload = '{
+
+
+
+
+
+
+
+//(Unnamed)
+{
     "alertName":"LONG RUNNING OR ABORTED WAVES",
     "dataSource":"MAWM",
     "database":{
@@ -296,13 +292,13 @@ update app.warehouselocationdetail set payload = '{
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
     "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
-}' 
-where warehouseid in (select wl.warehouseid
-            from app.warehouselocation wl  
-            where wl.warehouseshortname not in  ('ARK', 'PEN', 'POR', 'WSD', 'HAW', 'KAP', 'KAU', 'LIV', 'LOU', 'MAU', 'OAH'))
-    and requesttypeid=(select rt.requesttypeid
-                from app.requesttype rt 
-                where rt.description='db-alert-waves-long-abort');
+}
 
 
- 
+
+
+
+
+
+
+

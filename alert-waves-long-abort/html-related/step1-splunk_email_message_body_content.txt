@@ -1,6 +1,6 @@
-//Named queries (enabled (only ARK, ELP, JES, LIV, LOU, PEN, POR, ROM, SIO, TAM, as of writing) + disabled)
+//Named queries (enabled only - ARK, PEN, POR, WSD, HAW, KAP, KAU, LIV, LOU, MAU, OAH as of writing)
 
-// (ARK/ELP/JES/LIV/LOU/PEN/POR/ROM/SIO/TAM)
+// (ARK, PEN, POR, WSD, HAW, KAP, KAU, LIV, LOU, MAU, OAH)
 The alert condition for '$name$' was triggered.
 
 ***MSP TO CLEAN UP***
