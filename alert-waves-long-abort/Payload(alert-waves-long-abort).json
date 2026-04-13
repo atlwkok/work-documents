@@ -1,0 +1,304 @@
+//Named queries (enabled only - ARK, PEN, POR, WSD, HAW, KAP, KAU, LIV, LOU, MAU, OAH as of writing)
+//Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
+//paste into word document and then re-paste here.
+//REMEMBER TO REMOVE ANY LINE BREAKS, AND VALIDATE FROMEAMAIL/TOEMAIL/CCEMAIL/ATTACHMENT VALUES 
+// AND EXECUTE json conversion script for payload below for this db-alert to ensure it was inserted correctly!
+//SELECT *
+// FROM (
+//     SELECT 
+//         wd.*, 
+//         row_number() OVER () AS rn
+//     FROM app.warehouselocationdetail wd
+// ) t
+// WHERE rn between 6 and 7
+// AND (payload::jsonb IS NOT NULL);
+
+
+// (ARK)
+{
+    "alertName":"LONG RUNNING OR ABORTED WAVES",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Kim.Crawford@rndc-usa.com, Joe.Thompson@rndc-usa.com, Joshua.Edens@rndc-usa.com",
+        "ccEmail":"WMSInternal@rndc-usa.com, WMSMSPSupport@rndc-usa.com, WMSConsultant@rndc-usa.com, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
+}
+
+
+// (PEN)
+
+{
+    "alertName":"LONG RUNNING OR ABORTED WAVES",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com,Mathew.Floerke@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
+}
+
+
+// (POR)
+{
+    "alertName":"LONG RUNNING OR ABORTED WAVES",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
+}
+
+
+// (WSD)
+{
+    "alertName":"LONG RUNNING OR ABORTED WAVES",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"demetrius.dever@rndc-usa.com,Michael.Clark@RNDC-USA.com,guy.sriwatcharakul@rndc-usa.com,hank.dryden@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
+}
+
+
+// (HAW)
+{
+    "alertName":"LONG RUNNING OR ABORTED WAVES",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Teppi.Waxman@RNDC-USA.COM, Jesse.Kahalioumi@RNDC-USA.COM, Mark.Carriaga@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
+}
+
+
+// (KAP)
+{
+    "alertName":"LONG RUNNING OR ABORTED WAVES",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Teppi.Waxman@RNDC-USA.COM, Titus.Manipon@rndc-usa.com, Reoben.Aquino@RNDC-USA.COM, ashlyn.javier@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
+}
+
+
+// (KAU)
+{
+    "alertName":"LONG RUNNING OR ABORTED WAVES",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Teppi.Waxman@RNDC-USA.COM, Derrik.Vuylsteke@RNDC-USA.COM",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
+}
+
+
+
+
+// (LIV)
+{
+    "alertName":"LONG RUNNING OR ABORTED WAVES",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"todd.dively2@rndc-usa.com;john.blarek@rndc-usa.com;chris.capotosto@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
+}
+
+
+//(LOU)
+{
+    "alertName":"LONG RUNNING OR ABORTED WAVES",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"frankie.troncosa@rndc-usa.com,erik.thoreson@rndc-usa.com,leroy.willis@rndc-usa.com",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
+}
+
+
+
+
+
+// (MAU)
+{
+    "alertName":"LONG RUNNING OR ABORTED WAVES",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Teppi.Waxman@RNDC-USA.COM, Derrik.Vuylsteke@RNDC-USA.COM",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
+}
+
+
+
+// (OAH)
+
+{
+    "alertName":"LONG RUNNING OR ABORTED WAVES",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Teppi.Waxman@RNDC-USA.COM, stanley.monis@rndc-usa.com, SeoFoo.Dang@RNDC-USA.COM, Vincent.Labasan@RNDC-USA.COM, Amorsolo.Angco@rndc-usa.com, Wallace.Moniz@RNDC-USA.COM, Reoben.Aquino@RNDC-USA.COM, ashlyn.javier@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
+}
+
+
+
+
+
+
+
+
+
+
+
+//(Unnamed)
+{
+    "alertName":"LONG RUNNING OR ABORTED WAVES",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT P.org_id, P.order_planning_run_id, P.planning_strategy_id, P.description, P.status, P.pipeline_id, P.created_timestamp, P.created_by, P.selected_orders, P.selected_order_lines, P.selected_units, P.deselected_order_lines, P.replenishment_created FROM (SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status < 500 AND DOP.org_id = $orgId AND DOP.created_timestamp < Date_sub(Now(), INTERVAL ''15'' minute) UNION SELECT DOP.org_id, DOP.order_planning_run_id, DOP.planning_strategy_id, STATUS.description, DOP.status, DOP.pipeline_id, DOP.created_timestamp, DOP.created_by, DOP.selected_orders, DOP.selected_order_lines, DOP.selected_units, DOP.deselected_order_lines, DOP.replenishment_created FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY DOP JOIN default_dcorder.DCO_PLANNING_RUN_STATUS STATUS ON DOP.status = STATUS.planning_run_status_id WHERE DOP.status = 400 AND DOP.org_id = $orgId AND DOP.updated_timestamp <= Date_sub(Now(), INTERVAL ''5'' minute) ) P ORDER BY P.created_timestamp DESC;"
+}
+
+
+
+
+
+
+
+
+
