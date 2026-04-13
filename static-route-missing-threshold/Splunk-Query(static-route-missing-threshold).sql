@@ -13,6 +13,14 @@ FROM   default_routing.rtg_static_route
 WHERE  ext_threshold IS NULL
        AND profile_id = '$orgId_Org_Profile';
 
+corrected:
+SELECT Substr(profile_id, 1, 3) 'WHSE',
+       static_route_id,
+       ext_threshold 'THRESHOLD_VALUE'
+FROM   default_routing.rtg_static_route
+WHERE  ext_threshold IS NULL
+       AND profile_id = concat($orgId, '_Org_Profile');
+
 
 -- Flattening SQL query to single line (paste and copy from chrome search bar)
  SELECT Substr(profile_id, 1, 3) 'WHSE',        static_route_id,        ext_threshold 'THRESHOLD_VALUE' FROM   default_routing.rtg_static_route WHERE  ext_threshold IS NULL        AND profile_id = '$orgId_Org_Profile'; 
