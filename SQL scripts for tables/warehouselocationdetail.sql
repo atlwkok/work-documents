@@ -4,177 +4,50 @@
  
 -- 	END IF;
 
-
-
-
-
+-- insert enabled alerts without payload
+--  db-alert-waves-long-abort.
  
- 
-SELECT * 
-FROM app.warehouselocationdetail wld JOIN app.warehouselocation wl ON wld.warehouseid = wl.warehouseid 
-WHERE wld.requesttypeid = (select rt.requesttypeid 
-                            from app.requesttype rt 
-                            where rt.description = 'db-alert-inv-adj-miss-rc') 
-                                AND wl.warehouseshortname = 'ATL' 
-ORDER BY warehousedetailid ASC
+insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
+    select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
+        from app.warehouselocation w, app.requesttype rt 
+        where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
+        and rt.description = 'db-alert-routed-cancelled' 
+        and not exists (select 1 from app.warehouselocationdetail r 
+                            where r.requesttypeid = rt.requesttypeid 
+                            and r.warehouseid = w.warehouseid);
 
 
-SELECT *
-FROM APP.WAREHOUSELOCATIONDETAIL
 
-select * 
-from app.warehouselocationdetail wld join app.warehouselocation wl on wld.warehouseid = wl.warehouseid
-where description ='db-alert-inv-adj-miss-rc'  and payload is not null
-order by wld.description asc, wld.warehouseid asc;
+
+
+
+
+
+
+-- Check if enabled alerts were properly inserted
+
+select 1 
+from app.warehouselocationdetail r, app.warehouselo
+						where r.requesttypeid = rt.requesttypeid and r.warehouseid = w.warehouseid
+  
 
 select *
-from app.warehouselocationdetail
-order by requesttypeid
-
-
-SELECT *
-FROM APP.WAREHOUSELOCATIONDETAIL wld join app.warehouselocation wl
-	on wld.warehouseid = wl.warehouseid
-WHERE wld.REQUESTTYPEID=71
-
-	and wl.warehouseshortname = 'ELP' 
+	from app.warehouselocationdetail wld, app.warehouselocation wl
+	where wld.description like ('%db-alert-routed-cancelled')
+	AND wld.warehouseid = wl.warehouseid 
+	order by wl.warehouseshortname
 
 
 
 
---Ensure empty result to not re-insert records 
-select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, wld.payload, 'sysuser', 'sysuser' 
-	from app.warehouselocation w, app.requesttype rt, app.warehouselocationdetail wld
-	where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
-	and rt.description = 'db-alert-static-route-missing-threshold' 
-	and not exists (select 1 from app.warehouselocationdetail r 
-						where r.requesttypeid = rt.requesttypeid 
-						and r.warehouseid = w.warehouseid);
- 
-
---Check payload of unnamed queries 
-select w.warehouseshortname, rt.description, rt.description, w.warehouseid,  rt.requesttypeid, wld.payload, 'sysuser', 'sysuser' 
-	from app.warehouselocation w, app.requesttype rt,  app.warehouselocationdetail wld 
-	where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
-	and w.warehouseshortname not in ('ASH', 'POR', 'SAA', 'WSD', 'PEN')
-	and rt.description = 'db-alert-static-route-missing-threshold' 
-	and wld.warehouseid = w.warehouseid
-	and wld.requesttypeid = rt.requesttypeid
 
 
+-- insert payload for enabled alerts:
 
--- Fix issue from script #52, where attachment is missing value in payload of unnamed queries
--- Unnamed queries update attachment in payload
+-- Named queries (enabled only - PEN, POR, WSD, DFB, [LOU excluded for now as it uses Oracle] as of writing)
+-- (PEN)
 update app.warehouselocationdetail set payload = '{
-	"alertName":"STATIC ROUTE MISSING THRESHOLD VALUE",
-	"dataSource":"MAWM",
-	"database":{
-		"connection":"MAPRD_NEW",
-		"type":"MySQL",
-		"uri":"jdbc:{host}:{port}/information_schema"
-	},
-	"email":{
-		"subject":"Splunk Alert: $alertName$",
-		"body":"<pre>The alert condition for ''$name$'' was triggered.</pre>",
-		"fromEmail":"wms-tools-noreply@rndc-usa.com",
-		"toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM",
-		"ccEmail":"",
-		"footer":"",
-		"attachment":["link-to-alert","link-to-results", "inline-table"]
-	},
-	"sql":"SELECT Substr(profile_id, 1, 3) ''WHSE'', static_route_id, ext_threshold ''THRESHOLD_VALUE'' FROM default_routing.RTG_STATIC_ROUTE WHERE ext_threshold IS NULL AND profile_id = ''$orgId_Org_Profile'' "
-}' 
-where warehouseid in (select wl.warehouseid
-			from app.warehouselocation wl  
-			where wl.warehouseshortname not in  ('ASH', 'POR', 'SAA', 'WSD', 'PEN'))
-	and requesttypeid=(select rt.requesttypeid
-				from app.requesttype rt 
-				where rt.description='db-alert-static-route-missing-threshold');
-
-
-
--- Ensure named query payloads are not affected
-select w.warehouseshortname, rt.description, rt.description, w.warehouseid,  rt.requesttypeid, wld.payload, 'sysuser', 'sysuser' 
-	from app.warehouselocation w, app.requesttype rt,  app.warehouselocationdetail wld 
-	where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
-	and w.warehouseshortname in ('ASH', 'POR', 'SAA', 'WSD', 'PEN')
-	and rt.description = 'db-alert-static-route-missing-threshold' 
-	and wld.warehouseid = w.warehouseid
-	and wld.requesttypeid = rt.requesttypeid
-
-
-
-
--- Ensure unnamed query payloads are updated with the right payload attachment
-select w.warehouseshortname, rt.description, rt.description, w.warehouseid,  rt.requesttypeid, wld.payload, 'sysuser', 'sysuser' 
-	from app.warehouselocation w, app.requesttype rt,  app.warehouselocationdetail wld 
-	where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
-	and w.warehouseshortname not in ('ASH', 'POR', 'SAA', 'WSD', 'PEN')
-	and rt.description = 'db-alert-static-route-missing-threshold' 
-	and wld.warehouseid = w.warehouseid
-	and wld.requesttypeid = rt.requesttypeid
-
-
--- Ensure unrelated records not affected
-select w.warehouseshortname, rt.description, rt.description, w.warehouseid,  rt.requesttypeid, wld.payload, 'sysuser', 'sysuser' 
-	from app.warehouselocation w, app.requesttype rt,  app.warehouselocationdetail wld 
-	where w.warehouseshortname not in ('DEFAULTS', 'PRODEV')  
-	and rt.description != 'db-alert-static-route-missing-threshold' 
-	and wld.warehouseid = w.warehouseid
-	and wld.requesttypeid = rt.requesttypeid
-
-
--- Identify all records related to db-alert-static-route-missing-threshold
-SELECT *
-FROM (
-    SELECT 
-        wd.*, 
-        row_number() OVER () AS rn
-    FROM app.warehouselocationdetail wd
-	WHERE wd.longdescription = 'db-alert-static-route-missing-threshold'
-) t
-WHERE rn BETWEEN 4 AND 43
-
-
--- Ensure issue does not exist for all records related to db-alert-static-route-missing-threshold
-SELECT *
-FROM (
-    SELECT 
-        wd.*, 
-        row_number() OVER () AS rn
-    FROM app.warehouselocationdetail wd
-	WHERE wd.longdescription = 'db-alert-static-route-missing-threshold'
-) t
-WHERE rn BETWEEN 4 AND 43
-AND (payload::jsonb IS NOT NULL);
-
-
-
--- Error found when checking records != 'db-alert-static-route-missing-threshold'
-SELECT *
-FROM (
-    SELECT 
-        wd.*, 
-        row_number() OVER () AS rn
-    FROM app.warehouselocationdetail wd
-	WHERE wd.longdescription != 'db-alert-static-route-missing-threshold'
-) t
-WHERE (payload::jsonb IS NOT NULL);
-
-
-
--- To resolve error
--- ERROR:  invalid input syntax for type json
--- Character with value 0x0a must be escaped. 
-
--- SQL state: 22P02
--- Detail: Character with value 0x0a must be escaped.
--- Context: JSON data, line 13: ...lain2@RNDC-USA.COM, Keith.McKinzie@RNDC-USA.COM, 
-
--- From script #59 (issue was with line feed/having emails toEmails overflow to newline)
--- (JES)
-update app.warehouselocationdetail set payload = '{
-    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "alertName":"ROUTED ORDERS CANCELLED",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -183,110 +56,20 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />Description: <br />Verify in Driver Check-In that product was physically shipped to customer. Generate non-WMS invoice to customer to create positive *F transaction as cancelled invoice in Alpha and Oracle will relieve pending shipment and customer''s A/R will be credited automatically. Corresponding offset will be negative cycle count since product was never systematically shipped from WM.<br /></pre>",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"Richard.Chamberlain2@RNDC-USA.COM, Keith.McKinzie@RNDC-USA.COM, Tony.Derin@RNDC-USA.COM, Zeke.Mercer@RNDC-USA.COM, Constant.Kellam@RNDC-USA.COM,Jose.Moreno@RNDC-USA.COM, James.Stone@rndc-usa.com, Michael.Clark@rndc-usa.com",
+        "toEmail":"Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com",
         "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() + interval 15 minute AND now() + interval 1455 minute AND reason_code_id IS NULL AND PE.org_id = $orgId;"
-}' where warehouseid = (select w.warehouseid 
-                        from app.warehouselocation w 
-                        where w.warehouseshortname='JES') 
-    and requesttypeid=(select rt.requesttypeid 
-                        from app.requesttype rt 
-                        where rt.description='db-alert-inv-adj-miss-rc');
+    "sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type, O.billing_account_number, O.bill_to_name AS ''CUSTOMER'' , Concat(O.maximum_status,''-'',DS.description) ''ORDER_STATUS'', OLI.original_order_planning_run_id , OLI.item_id ''SKU'', OLI.description ''SKU_DESCRIPTION'' , O.updated_timestamp, O.updated_by FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS DS ON DS.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_LINE OLI ON OLI.original_order_id = O.original_order_id AND O.org_id = OLI.org_id WHERE 1=1 AND O.org_id = $orgId AND Upper(O.order_type) = ''STANDARD'' AND O.maximum_status = ''9000'' AND O.updated_timestamp >= Now() - INTERVAL 1 day;"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='PEN') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-routed-cancelled');
 
 
-
-SELECT *
-FROM (
-    SELECT 
-        wd.*, 
-        row_number() OVER () AS rn
-    FROM app.warehouselocationdetail wd
-	WHERE wd.longdescription != 'db-alert-static-route-missing-threshold'
-) t
-WHERE (payload::jsonb IS NOT NULL);
-
-
-
--- Check db-alerts that are not static-route-missing-threshold
--- 473 rows total
--- each db-alert comes in rows of 43
--- identified that it's db-alert-routes-multi-wave
-SELECT *
-FROM (
-    SELECT 
-        wd.*, 
-        row_number() OVER () AS rn,
-		w.*
-    FROM app.warehouselocationdetail wd, app.warehouselocation w
-	WHERE wd.longdescription not in(
-	'db-alert-static-route-missing-threshold',
-	'db-alert-inv-adj-miss-rc',
-	'db-alert-lia-pack-uom',
-	'db-alert-order-no-desig',
-	'db-alert-order-no-desig-assign',
-	'db-alert-orders-deselected-waving',
-	'db-alert-order-stuck-15m')
-	and wd.longdescription like '%db-alert%' 
-	and wd.longdescription = 'db-alert-routes-multi-wave'
-	and wd.warehouseid = w.warehouseid 
-	order by wd.lastupdatedon, w.warehouseshortname
-) t
-WHERE rn BETWEEN 1 AND 100
-and (payload::jsonb IS NOT NULL);
-
-
-
-
--- issue found for db-alert-routes-multi-wave, 'TAM'
-SELECT *
-FROM (
-    SELECT 
-        wd.*, 
-        row_number() OVER () AS rn,
-		w.*
-    FROM app.warehouselocationdetail wd, app.warehouselocation w
-	WHERE wd.longdescription = 'db-alert-routes-multi-wave'
-	and w.warehouseshortname = 'TAM'
-	and wd.warehouseid = w.warehouseid 
-	order by wd.lastupdatedon, w.warehouseshortname
-) t
-where (payload::jsonb IS NOT NULL);
--- (incrementally increase using row number)
-
-
----No issues for db-alert-routes-multi-wave != 'TAM'
-SELECT *
-FROM (
-    SELECT 
-        wd.*, 
-        row_number() OVER () AS rn,
-		w.*
-    FROM app.warehouselocationdetail wd, app.warehouselocation w
-	WHERE wd.longdescription = 'db-alert-routes-multi-wave'
-	and w.warehouseshortname != 'TAM'
-	and wd.warehouseid = w.warehouseid 
-	order by wd.lastupdatedon, w.warehouseshortname
-) t
-where (payload::jsonb IS NOT NULL);
-
-
-
-
--- Issue found in script #58
--- ERROR:  invalid input syntax for type json
--- Character with value 0x0a must be escaped. 
-
--- SQL state: 22P02
--- Detail: Character with value 0x0a must be escaped.
-
--- Fix issue for db-alert-routes-multi-wave , 'TAM' (issue was with line feed/having emails toEmails overflow to newline)
+-- (POR)
 update app.warehouselocationdetail set payload = '{
-    "alertName":"ROUTES WITH MULTIPLE WAVE NUMBERS",
+    "alertName":"ROUTED ORDERS CANCELLED",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -295,154 +78,123 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Description:<br />A user has waved this route across two different wave numbers. Sortation software is not able to process a route correctly that is waved across two different WMS wave numbers.  Cases will be missing if the IT Service Desk is not called.  Please stop what you are doing immediately and call the Service Desk to correct this condition.  <br /><br />Phone: 866-RNDC-HLP (866-763-2457)<br /><br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI<br /><br /><br /></pre>",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />Description: <br />Verify in Driver Check-In that product was physically shipped to customer. Generate non-WMS invoice to customer to create positive *F transaction as cancelled invoice in Alpha and Oracle will relieve pending shipment and customer''s A/R will be credited automatically. Corresponding offset will be negative cycle count since product was never systematically shipped from WM.<br /></pre>",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"stephen.king@rndc-usa.com,doug.lepkowski@rndc-usa.com,lawrence.french@rndc-usa.com,torey.thomas@rndc-usa.com,kenneth.harms@rndc-usa.com, Eduardo.Gutierrez@rndc-usa.com",
-        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com,WMSMSPSupport@rndc-usa.com",
+        "toEmail":"bryce.meyer@rndc-usa.com, Michael.Ferdinand@Penske.com, abel.paucardelacruz@rndc-usa.com, Sara.Farrington@Penske.com, Matthew.Chavez@Penske.com,Jesse.Butler@Penske.com, Brian.Bontemps@penske.com",
+        "ccEmail":"",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":" SELECT T.org_id, T.ext_route_id, Count(DISTINCT T.wave_nbr) ''WAVE_NBR'' FROM (SELECT OL.org_id, OL.original_order_id, OL.designated_shipment_id, O.ext_route_id, OL.original_order_line_id, OL.status_change_date_time, PLA.created_timestamp, OL.original_order_planning_run_id, OL.order_planning_run_id, CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END AS ''WAVE_NBR'', OL.status FROM default_dcorder.DCO_ORDER_LINE OL join default_dcorder.DCO_ORDER O ON OL.order_id = O.order_id AND O.org_id = $orgId AND O.pipeline_id = ''RNDC_Standard_Order_Pipeline'' join default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY PLA ON ( CASE WHEN OL.original_order_planning_run_id IS NULL THEN OL.order_planning_run_id ELSE OL.original_order_planning_run_id END ) = PLA.order_planning_run_id WHERE 1 = 1 AND Upper(PLA.planning_strategy_id) LIKE ''%%STANDARD%%'' AND PLA.status <> ''900'' AND OL.status IN ( ''CREATED'', ''READY'', ''WORKINPROGRESS'', ''WORKCOMPLETED'' , ''ALLOCATED'', ''FAILED'', ''PACKING'', ''PACKED'', ''STAGED'', ''MANIFESTED'' ) AND OL.original_order_id IN (SELECT original_order_id FROM default_dcorder.DCO_ORDER WHERE order_type = ''Standard'') AND OL.org_id = $orgId AND ( OL.original_order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) OR OL.order_planning_run_id IN (SELECT run_id FROM default_dcallocation.DCA_ALLOCATION_RUN WHERE created_timestamp > Now() - interval 8 hour) )) T GROUP BY T.org_id, T.ext_route_id HAVING Count(DISTINCT wave_nbr) > 1; "
-}' where warehouseid = (select w.warehouseid 
-                        from app.warehouselocation w 
-                        where w.warehouseshortname='TAM') 
-    and requesttypeid=(select rt.requesttypeid 
-                        from app.requesttype rt 
-                        where rt.description='db-alert-routes-multi-wave');
+    "sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type, O.billing_account_number, O.bill_to_name AS ''CUSTOMER'' , Concat(O.maximum_status,''-'',DS.description) ''ORDER_STATUS'', OLI.original_order_planning_run_id , OLI.item_id ''SKU'', OLI.description ''SKU_DESCRIPTION'' , O.updated_timestamp, O.updated_by FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS DS ON DS.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_LINE OLI ON OLI.original_order_id = O.original_order_id AND O.org_id = OLI.org_id WHERE 1=1 AND O.org_id = $orgId AND Upper(O.order_type) = ''STANDARD'' AND O.maximum_status = ''9000'' AND O.updated_timestamp >= Now() - INTERVAL 1 day;"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='POR') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-routed-cancelled');
 
 
 
--- Ensure issue resolved for db-alert-routes-multi-wave, 'TAM'
+-- (WSD)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"ROUTED ORDERS CANCELLED",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />Description: <br />Verify in Driver Check-In that product was physically shipped to customer. Generate non-WMS invoice to customer to create positive *F transaction as cancelled invoice in Alpha and Oracle will relieve pending shipment and customer''s A/R will be credited automatically. Corresponding offset will be negative cycle count since product was never systematically shipped from WM.<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"demetrius.dever@rndc-usa.com,Michael.Clark@RNDC-USA.com,guy.sriwatcharakul@rndc-usa.com,hank.dryden@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type, O.billing_account_number, O.bill_to_name AS ''CUSTOMER'' , Concat(O.maximum_status,''-'',DS.description) ''ORDER_STATUS'', OLI.original_order_planning_run_id , OLI.item_id ''SKU'', OLI.description ''SKU_DESCRIPTION'' , O.updated_timestamp, O.updated_by FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS DS ON DS.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_LINE OLI ON OLI.original_order_id = O.original_order_id AND O.org_id = OLI.org_id WHERE 1=1 AND O.org_id = $orgId AND Upper(O.order_type) = ''STANDARD'' AND O.maximum_status = ''9000'' AND O.updated_timestamp >= Now() - INTERVAL 1 day;"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='WSD') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-routed-cancelled');
+
+
+
+-- (DFB)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"ROUTED ORDERS CANCELLED",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />Description: <br />Verify in Driver Check-In that product was physically shipped to customer. Generate non-WMS invoice to customer to create positive *F transaction as cancelled invoice in Alpha and Oracle will relieve pending shipment and customer''s A/R will be credited automatically. Corresponding offset will be negative cycle count since product was never systematically shipped from WM.<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Frank.Ryan@RNDC-USA.COM,  Jamil.Tate@rndc-usa.com, Angel.Gutierrez@RNDC-USA.COM, David.Gould2@rndc-usa.com, don.hamlin@rndc-usa.com",
+        "ccEmail":"WMSInternal@rndc-usa.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type, O.billing_account_number, O.bill_to_name AS ''CUSTOMER'' , Concat(O.maximum_status,''-'',DS.description) ''ORDER_STATUS'', OLI.original_order_planning_run_id , OLI.item_id ''SKU'', OLI.description ''SKU_DESCRIPTION'' , O.updated_timestamp, O.updated_by FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS DS ON DS.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_LINE OLI ON OLI.original_order_id = O.original_order_id AND O.org_id = OLI.org_id WHERE 1=1 AND O.org_id = $orgId AND Upper(O.order_type) = ''STANDARD'' AND O.maximum_status = ''9000'' AND O.updated_timestamp >= Now() - INTERVAL 1 day;"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='DFB') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-routed-cancelled');
+
+
+
+
+ -- (Unnamed)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"ROUTED ORDERS CANCELLED",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />Description: <br />Verify in Driver Check-In that product was physically shipped to customer. Generate non-WMS invoice to customer to create positive *F transaction as cancelled invoice in Alpha and Oracle will relieve pending shipment and customer''s A/R will be credited automatically. Corresponding offset will be negative cycle count since product was never systematically shipped from WM.<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type, O.billing_account_number, O.bill_to_name AS ''CUSTOMER'' , Concat(O.maximum_status,''-'',DS.description) ''ORDER_STATUS'', OLI.original_order_planning_run_id , OLI.item_id ''SKU'', OLI.description ''SKU_DESCRIPTION'' , O.updated_timestamp, O.updated_by FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS DS ON DS.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_LINE OLI ON OLI.original_order_id = O.original_order_id AND O.org_id = OLI.org_id WHERE 1=1 AND O.org_id = $orgId AND Upper(O.order_type) = ''STANDARD'' AND O.maximum_status = ''9000'' AND O.updated_timestamp >= Now() - INTERVAL 1 day;"
+}' 
+where warehouseid in (select wl.warehouseid
+            from app.warehouselocation wl  
+            where wl.warehouseshortname not in  ('PEN', 'POR', 'WSD', 'DFB'))
+    and requesttypeid=(select rt.requesttypeid
+                from app.requesttype rt 
+                where rt.description='db-alert-routed-cancelled');
+
+
+-- Check and ensure right payloads are inserted and not affecting other unrelated records
+
+
+select wld.payload, wl.warehouseshortname, wld.description
+from app.warehouselocationdetail wld join app.warehouselocation wl
+on wld.warehouseid = wl.warehouseid 
+where description != 'db-alert-routed-cancelled'
+and wld.payload is not null
+-- order by wld.payload
+
+
+
+
+select  wld.payload, wl.warehouseshortname, wld.description
+from app.warehouselocationdetail wld join app.warehouselocation wl
+on wld.warehouseid = wl.warehouseid 
+where description = 'db-alert-routed-cancelled'
+and wld.payload is not null
+order by wld.lastupdatedon
+
+
+
+-- Test to ensure payloads can successfully be converted to JSON
+
 SELECT *
 FROM (
     SELECT 
         wd.*, 
-        row_number() OVER () AS rn,
-		w.*
-    FROM app.warehouselocationdetail wd, app.warehouselocation w
-	WHERE wd.longdescription = 'db-alert-routes-multi-wave'
-	and w.warehouseshortname = 'TAM'
-	and wd.warehouseid = w.warehouseid 
-	order by wd.lastupdatedon, w.warehouseshortname
-) t
-where (payload::jsonb IS NOT NULL);
-
-
-
-
--- Ensure no issues in other db-alert records (that I created seen in longdescription list below)
--- Get DB-alerts using this query
--- SELECT description 
--- FROM app.warehouselocationdetail
--- where longdescription like '%db-alert%'
--- group by description
--- ORDER BY description ASC 
-SELECT *
-FROM (
-    SELECT 
-        wd.*, 
-        row_number() OVER () AS rn,
-		w.*
-    FROM app.warehouselocationdetail wd, app.warehouselocation w
-	WHERE wd.longdescription in(
-	'db-alert-inv-adj-miss-rc',
-	'db-alert-lia-pack-uom',
-	'db-alert-order-no-desig',
-	'db-alert-order-no-desig-assign',	
-	'db-alert-orders-deselected-waving',
-	'db-alert-order-stuck-15m',
-	'db-alert-routes-multi-wave',
-	'db-alert-route-ui-dflt-miss',
-	'db-alert-static-route-missing-threshold')  
-	and wd.warehouseid = w.warehouseid 
-	order by wd.lastupdatedon, w.warehouseshortname
-) t
-WHERE rn BETWEEN 1 AND 1000
-and (payload::jsonb IS NOT NULL);
-
-
-
-
--- Ensure no issues with non-db-alerts
-SELECT *
-FROM (
-    SELECT 
-        wd.*, 
-        row_number() OVER () AS rn,
-		w.*
-    FROM app.warehouselocationdetail wd, app.warehouselocation w
-	WHERE wd.longdescription not like '%db-alert%'
-	and wd.warehouseid = w.warehouseid 
-	order by wd.lastupdatedon, w.warehouseshortname
+        row_number() OVER () AS rn
+    FROM app.warehouselocationdetail wd
+	where description = 'db-alert-routed-cancelled'
 ) t 
 where (payload::jsonb IS NOT NULL);
-
-
-
--- Ensure no issues with db-alerts
--- ERROR:  invalid input syntax for type json
--- Token "AsnId" is invalid. 
-
--- SQL state: 22P02
--- Detail: Token "AsnId" is invalid.
--- Context: JSON data, line 10: .../receiving/api/receiving/asn/save<br>{<br> "AsnId...
--- (seems to be issue with script #57 done by Jifeng)
-SELECT *
-FROM (
-    SELECT 
-        wd.*, 
-        row_number() OVER () AS rn,
-		w.*
-    FROM app.warehouselocationdetail wd, app.warehouselocation w
-	WHERE wd.longdescription like '%db-alert%'
-	and wd.warehouseid = w.warehouseid 
-	order by wd.lastupdatedon, w.warehouseshortname
-) t 
-where (payload::jsonb IS NOT NULL);
-
-
-
--- Update payload for PEN warehouse (original sql)
-	update app.warehouselocationdetail 
-	set payload = 
-	'{"alertName": "MISSING ITEM LEVEL VERIFICATION PIX",
-        "dataSource": "MAWM",
-        "database": {
-            "connection": "MAWM_SOA_PRD",
-            "type": "Oracle",
-            "uri": "jdbc:{host}:{port}/information_schema"
-        },
-        "email": {
-            "subject": "Splunk Alert: $name$",
-            "body": "<pre>The alert condition for ''$name$'' was triggered.<br><br>Note: Manhattan case 8484820 is opened for this.<br><br>MSP Team,<br>Please see the attached email and how I cleaned this up with screenshots for reference.<br><br>MSP TO CLEAN UP<br><br>Clean Up Steps:<br><br>1) Update ASN Back to Receiving Status : POST {{app_host}}/receiving/api/receiving/asn/save<br>{<br> \"AsnId\": \"XXXXXXXXX\",<br> \"AsnStatus\": \"3000\"<br>}<br>2) Verify ASN is \"In Receiving\" status in the UI.<br>3) Add the PO Back to the ASN.<br>a) From the ASN''s UI select the replated Link for Receipts to See the PO/PO''s that were attached to the ASN.<br>b) Go to the ASN''s UI and select the Assign/Unassign PO Lines to ASN option<br>c) Enter your PO Numbers and Search for the PO and Lines<br>d) Select all lines and add hit Add to ASN<br>e) Hit Save and Finish<br>f) PO Lines are now assigned back to the ASN, Verify in the ASN''s UI<br>4) Update the Verification Attempt Field on the ASN back to \"false\" using the API : POST {{app_host}}/receiving/api/receiving/asn/save<br>{<br> \"AsnId\": \"XXXXXXXXX\",<br> \"VerificationAttempted\": false<br>}<br>5) Verify the ASN in the ASN''s UI, Accept any Variances that May exist<br>6) Check to make sure the New Pix Transactions were created in the Middleware Staging DB. select * from pix_trx where asn_no = ''XXXXXXXX'' and created_dttm > sysdate -.25</pre>",
-            "fromEmail": "wms-tools-noreply@rndc-usa.com",
-            "toEmail": "wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com, wmsconsultant@rndc-usa.com",
-            "ccEmail": "",
-            "footer": "",
-            "attachment": ["link-to-alert", "link-to-results", "inline-table"]
-        },
-        "sql": "select pt.warehouse, pt.asn_no asn_number, listagg(po.po_no, '' , '') within group (order by pt.asn_no) purchase_orders, pt.pixid, pt.created_dttm from $orgId_wmsods.pix_trx pt left join (select distinct po_no, asn_no from $orgId_wmsods.pix_trx t2 where pix_spec = ''SupplierReceiptId'') po on po.asn_no = pt.asn_no where pt.pix_spec = ''ASN Level'' and pt.asn_no not in (select asn_no from $orgId_wmsods.pix_trx where pix_spec = ''ITEM_Level'') and created_dttm >= sysdate -1 group by pt.asn_no, created_dttm, warehouse, pixid"
-    }' 
-	where warehouseid = (
-		select w.warehouseid 
-		from app.warehouselocation w 
-		where w.warehouseshortname='PEN'
-	) 
-	and requesttypeid = (
-		select rt.requesttypeid 
-		from app.requesttype rt 
-		where rt.description='db-alert-miss-item-verif'
-	);
-
-
--- Acceptance criteria - no issues when running this:
-select 
-wd.payload::jsonb
-from app.warehouselocationdetail wd
-
-
-
-
-
-
-
