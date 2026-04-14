@@ -1,10 +1,18 @@
+--Named queries (enabled only - PEN, POR, WSD, DFB, [LOU excluded for now as it uses Oracle] as of writing)
+--Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
+--paste into word document and then re-paste here.
+--REMEMBER TO REMOVE ANY LINE BREAKS, AND VALIDATE FROMEAMAIL/TOEMAIL/CCEMAIL/ATTACHMENT VALUES 
+-- AND EXECUTE json conversion script for payload below for this db-alert to ensure it was inserted correctly!
+--SELECT *
+-- FROM (
+--     SELECT 
+--         wd.*, 
+--         row_number() OVER () AS rn
+--     FROM app.warehouselocationdetail wd
+-- ) t
+-- WHERE rn between 6 and 7
+-- AND (payload::jsonb IS NOT NULL);
 
--- do $$
--- BEGIN
- 
--- 	END IF;
-
--- insert enabled alerts without payload
 --  db-alert-waves-long-abort.
  
 insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
@@ -18,31 +26,6 @@ insert into app.warehouselocationdetail(description, longdescription, warehousei
 
 
 
-
-
-
-
-
-
--- Check if enabled alerts were properly inserted
-
-select 1 
-from app.warehouselocationdetail r, app.warehouselo
-						where r.requesttypeid = rt.requesttypeid and r.warehouseid = w.warehouseid
-  
-
-select *
-	from app.warehouselocationdetail wld, app.warehouselocation wl
-	where wld.description like ('%db-alert-routed-cancelled')
-	AND wld.warehouseid = wl.warehouseid 
-	order by wl.warehouseshortname
-
-
-
-
-
-
--- insert payload for enabled alerts:
 
 -- Named queries (enabled only - PEN, POR, WSD, DFB, [LOU excluded for now as it uses Oracle] as of writing)
 -- (PEN)
@@ -65,6 +48,10 @@ update app.warehouselocationdetail set payload = '{
     },
     "sql":"SELECT O.org_id, O.original_order_id AS ''ORDER'', O.order_type, O.billing_account_number, O.bill_to_name AS ''CUSTOMER'' , Concat(O.maximum_status,''-'',DS.description) ''ORDER_STATUS'', OLI.original_order_planning_run_id , OLI.item_id ''SKU'', OLI.description ''SKU_DESCRIPTION'' , O.updated_timestamp, O.updated_by FROM default_dcorder.DCO_ORIGINAL_ORDER O LEFT JOIN default_dcorder.DCO_ORDER_STATUS DS ON DS.order_status_id = O.maximum_status LEFT JOIN default_dcorder.DCO_ORDER_LINE OLI ON OLI.original_order_id = O.original_order_id AND O.org_id = OLI.org_id WHERE 1=1 AND O.org_id = $orgId AND Upper(O.order_type) = ''STANDARD'' AND O.maximum_status = ''9000'' AND O.updated_timestamp >= Now() - INTERVAL 1 day;"
 }' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='PEN') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-routed-cancelled');
+
+
+
+
 
 
 -- (POR)
@@ -137,7 +124,9 @@ update app.warehouselocationdetail set payload = '{
 
 
 
- -- (Unnamed)
+
+
+-- (Unnamed)
 update app.warehouselocationdetail set payload = '{
     "alertName":"ROUTED ORDERS CANCELLED",
     "dataSource":"MAWM",
@@ -165,36 +154,4 @@ where warehouseid in (select wl.warehouseid
                 where rt.description='db-alert-routed-cancelled');
 
 
--- Check and ensure right payloads are inserted and not affecting other unrelated records
-
-
-select wld.payload, wl.warehouseshortname, wld.description
-from app.warehouselocationdetail wld join app.warehouselocation wl
-on wld.warehouseid = wl.warehouseid 
-where description != 'db-alert-routed-cancelled'
-and wld.payload is not null
--- order by wld.payload
-
-
-
-
-select  wld.payload, wl.warehouseshortname, wld.description
-from app.warehouselocationdetail wld join app.warehouselocation wl
-on wld.warehouseid = wl.warehouseid 
-where description = 'db-alert-routed-cancelled'
-and wld.payload is not null
-order by wld.lastupdatedon
-
-
-
--- Test to ensure payloads can successfully be converted to JSON
-
-SELECT *
-FROM (
-    SELECT 
-        wd.*, 
-        row_number() OVER () AS rn
-    FROM app.warehouselocationdetail wd
-	where description = 'db-alert-routed-cancelled'
-) t 
-where (payload::jsonb IS NOT NULL);
+ 
