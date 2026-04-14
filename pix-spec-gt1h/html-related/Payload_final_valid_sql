@@ -16,13 +16,13 @@
 -- WHERE rn between 6 and 7
 -- AND (payload::jsonb IS NOT NULL);
 
---  db-alert-waves-long-abort.
+--  db-alert-pix-spec-gt1h.
  
 insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
     select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
         from app.warehouselocation w, app.requesttype rt 
         where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
-        and rt.description = 'db-alert-routed-cancelled' 
+        and rt.description = 'db-alert-pix-spec-gt1h' 
         and not exists (select 1 from app.warehouselocationdetail r 
                             where r.requesttypeid = rt.requesttypeid 
                             and r.warehouseid = w.warehouseid);
