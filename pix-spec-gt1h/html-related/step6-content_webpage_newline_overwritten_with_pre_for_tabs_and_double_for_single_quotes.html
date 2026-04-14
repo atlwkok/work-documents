@@ -1,0 +1,9 @@
+//Named queries (enabled only (ALL) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+// (ALL)
+<!DOCTYPE html><html><body><pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /><br />Manhattan Case:  8461889<br /><br />Clean-Up Steps:<br /><br />1)	Use the following API & payload to clear this alert.<br /><br />POST {{app_host}}/pix/api/pix/pixEntry/save<br /><br />{<br />    \"PK\": \"{{PK}}\",<br />    \"StatusId\": \"9000\"<br />}<br /></pre></body></html>
+
+//Disabled queries
+<!DOCTYPE html><html><body><pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /><br />Manhattan Case:  8461889<br /><br />Clean-Up Steps:<br /><br />1)	Use the following API & payload to clear this alert.<br /><br />POST {{app_host}}/pix/api/pix/pixEntry/save<br /><br />{<br />    \"PK\": \"{{PK}}\",<br />    \"StatusId\": \"9000\"<br />}<br /></pre></body></html>

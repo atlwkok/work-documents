@@ -1,0 +1,41 @@
+//Named queries (enabled only (ALL) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+// (ALL)
+<!DOCTYPE html>
+<html>
+<body>
+The alert condition for ''$name$'' was triggered.
+
+***MSP TO CLEAN UP***
+
+Manhattan Case:  8461889
+
+Clean-Up Steps:
+
+1)	Use the following API & payload to clear this alert.
+
+POST {{app_host}}/pix/api/pix/pixEntry/save
+
+{
+    \"PK\": \"{{PK}}\",
+    \"StatusId\": \"9000\"
+}
+
+</body>
+</html>
+
+
+
+//Disabled queries
+<!DOCTYPE html>
+<html>
+<body>
+The alert condition for ''$name$'' was triggered.
+
+Description: 
+Verify in Driver Check-In that product was physically shipped to customer. Generate non-WMS invoice to customer to create positive *F transaction as cancelled invoice in Alpha and Oracle will relieve pending shipment and customer''s A/R will be credited automatically. Corresponding offset will be negative cycle count since product was never systematically shipped from WM.
+
+</body>
+</html>

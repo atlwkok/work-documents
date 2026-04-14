@@ -1,0 +1,65 @@
+//Named queries (enabled only (ALL) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+//Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
+//paste into word document and then re-paste here.
+//REMEMBER TO REMOVE ANY LINE BREAKS, AND VALIDATE FROMEAMAIL/TOEMAIL/CCEMAIL/ATTACHMENT VALUES 
+// AND EXECUTE json conversion script for payload below for this db-alert to ensure it was inserted correctly!
+//SELECT *
+// FROM (
+//     SELECT 
+//         wd.*, 
+//         row_number() OVER () AS rn
+//     FROM app.warehouselocationdetail wd
+// ) t
+// WHERE rn between 6 and 7
+// AND (payload::jsonb IS NOT NULL);
+
+ 
+// (ALL)
+{
+    "alertName":"MAWM PIX Specification Found > 1 Hour",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /><br />Manhattan Case:  8461889<br /><br />Clean-Up Steps:<br /><br />1) Use the following API & payload to clear this alert.<br /><br />POST {{app_host}}/pix/api/pix/pixEntry/save<br /><br />{<br />    \"PK\": \"{{PK}}\",<br />    \"StatusId\": \"9000\"<br />}<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@RNDC-USA.COM, WMSConsultant@RNDC-USA.COM, fargueta@manh.com, mcurtis@manh.com, anamburi@manh.com, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com, WMSMSPSupport@RNDC-USA.COM",
+        "ccEmail":"wmsinternal@RNDC-USA.COM, WMSConsultant@RNDC-USA.COM, fargueta@manh.com, mcurtis@manh.com, anamburi@manh.com, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT P.org_id, P.pix_specification_id, PS.description, P.pix_event_payload_id, P.updated_timestamp, P.pk FROM default_pix.PIX_PIX_ENTRY P LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = P.status_id WHERE P.status_id NOT IN ( ''9000'', ''8000'' ) AND P.updated_timestamp < Now() - INTERVAL 1 hour AND P.updated_timestamp > Now() - INTERVAL 1*24*365 hour ORDER BY P.updated_timestamp DESC;"
+}
+
+
+
+
+//Disabled queries
+
+{
+    "alertName":"MAWM PIX Specification Found > 1 Hour",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br /><br />Manhattan Case:  8461889<br /><br />Clean-Up Steps:<br /><br />1) Use the following API & payload to clear this alert.<br /><br />POST {{app_host}}/pix/api/pix/pixEntry/save<br /><br />{<br />    \"PK\": \"{{PK}}\",<br />    \"StatusId\": \"9000\"<br />}<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@RNDC-USA.COM, WMSConsultant@RNDC-USA.COM, fargueta@manh.com, mcurtis@manh.com, anamburi@manh.com, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com, WMSMSPSupport@RNDC-USA.COM",
+        "ccEmail":"wmsinternal@RNDC-USA.COM, WMSConsultant@RNDC-USA.COM, fargueta@manh.com, mcurtis@manh.com, anamburi@manh.com, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT P.org_id, P.pix_specification_id, PS.description, P.pix_event_payload_id, P.updated_timestamp, P.pk FROM default_pix.PIX_PIX_ENTRY P LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = P.status_id WHERE P.status_id NOT IN ( ''9000'', ''8000'' ) AND P.updated_timestamp < Now() - INTERVAL 1 hour AND P.updated_timestamp > Now() - INTERVAL 1*24*365 hour ORDER BY P.updated_timestamp DESC;"
+}
+
