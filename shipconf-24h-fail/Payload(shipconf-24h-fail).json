@@ -1,0 +1,66 @@
+//Named queries (enabled only (ALL) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+//Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
+//paste into word document and then re-paste here.
+//REMEMBER TO REMOVE ANY LINE BREAKS, AND VALIDATE FROMEAMAIL/TOEMAIL/CCEMAIL/ATTACHMENT VALUES 
+// AND EXECUTE json conversion script for payload below for this db-alert to ensure it was inserted correctly!
+//SELECT *
+// FROM (
+//     SELECT 
+//         wd.*, 
+//         row_number() OVER () AS rn
+//     FROM app.warehouselocationdetail wd
+// ) t
+// WHERE rn between 6 and 7
+// AND (payload::jsonb IS NOT NULL);
+
+ 
+// (ALL)
+{
+    "alertName":"MAWM Unprocessed Or Failed Ship Confirms Last 24 Hours",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@RNDC-USA.COM,WMSConsultant@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com, WMSMSPSupport@RNDC-USA.COM",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT SCB.org_id, ''SHIP_CONFIRM_BATCH'' AS ''SHIP_CONFIRM_TYPE'' , SCB.ship_confirm_batch_id, '' '' AS ''ORDER'', Concat(SCBS.status_id,''-'',SCBS.ship_confirm_batch_status_desc) ''STATUS'' , SCB.created_timestamp, SCB.updated_timestamp FROM default_shipconfirm.SHC_SHIP_CONFIRM_BATCH SCB LEFT JOIN default_shipconfirm.SHC_SHIP_CONFIRM_BATCH_STATUS SCBS ON SCBS.status_id = SCB.status_id WHERE SCB.status_id <> ''3000'' AND SCB.created_timestamp > Now() - INTERVAL 24 hour AND SCB.updated_timestamp < Now() - INTERVAL 20 minute UNION ALL SELECT SCBE.org_id, ''SHIP_CONFIRM_BATCH_ENTRY'' AS ''SHIP_CONFIRM_TYPE'', SCBE.ship_confirm_batch_id, SCBE.order_id AS ''ORDER'', Concat(SCBS.status_id,''-'',SCBS.ship_confirm_batch_status_desc) AS ''STATUS'' , SCBE.created_timestamp, SCBE.updated_timestamp FROM default_shipconfirm.SHC_SHIP_CONFIRM_ENTRY SCBE LEFT JOIN default_shipconfirm.SHC_SHIP_CONFIRM_BATCH_STATUS SCBS ON SCBS.status_id = SCBE.status_id WHERE SCBE.status_id NOT IN (''3000'', ''2000'') AND SCBE.order_id NOT IN ( SELECT original_order_id FROM default_dcorder.DCO_ORIGINAL_ORDER WHERE minimum_status = ''9000'') AND SCBE.order_id NOT IN ( SELECT order_id FROM default_shipconfirm.SHC_SHIP_CONFIRM_ENTRY WHERE status_id IN (''2000'', ''3000'')) AND SCBE.order_id NOT LIKE ''%%PICK%%LIST%%'' AND SCBE.order_id NOT IN ( SELECT order_id FROM default_pickpack.PPK_OLPN OLPN WHERE OLPN.org_id = SCBE.org_id AND OLPN.status < 7900) AND SCBE.created_timestamp > Now() - INTERVAL 24 hour AND SCBE.updated_timestamp < Now() - INTERVAL 20 minute;"
+}
+
+
+
+
+
+
+//Disabled queries
+{
+    "alertName":"MAWM Unprocessed Or Failed Ship Confirms Last 24 Hours",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /></pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@RNDC-USA.COM,WMSConsultant@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com, WMSMSPSupport@RNDC-USA.COM",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT SCB.org_id, ''SHIP_CONFIRM_BATCH'' AS ''SHIP_CONFIRM_TYPE'' , SCB.ship_confirm_batch_id, '' '' AS ''ORDER'', Concat(SCBS.status_id,''-'',SCBS.ship_confirm_batch_status_desc) ''STATUS'' , SCB.created_timestamp, SCB.updated_timestamp FROM default_shipconfirm.SHC_SHIP_CONFIRM_BATCH SCB LEFT JOIN default_shipconfirm.SHC_SHIP_CONFIRM_BATCH_STATUS SCBS ON SCBS.status_id = SCB.status_id WHERE SCB.status_id <> ''3000'' AND SCB.created_timestamp > Now() - INTERVAL 24 hour AND SCB.updated_timestamp < Now() - INTERVAL 20 minute UNION ALL SELECT SCBE.org_id, ''SHIP_CONFIRM_BATCH_ENTRY'' AS ''SHIP_CONFIRM_TYPE'', SCBE.ship_confirm_batch_id, SCBE.order_id AS ''ORDER'', Concat(SCBS.status_id,''-'',SCBS.ship_confirm_batch_status_desc) AS ''STATUS'' , SCBE.created_timestamp, SCBE.updated_timestamp FROM default_shipconfirm.SHC_SHIP_CONFIRM_ENTRY SCBE LEFT JOIN default_shipconfirm.SHC_SHIP_CONFIRM_BATCH_STATUS SCBS ON SCBS.status_id = SCBE.status_id WHERE SCBE.status_id NOT IN (''3000'', ''2000'') AND SCBE.order_id NOT IN ( SELECT original_order_id FROM default_dcorder.DCO_ORIGINAL_ORDER WHERE minimum_status = ''9000'') AND SCBE.order_id NOT IN ( SELECT order_id FROM default_shipconfirm.SHC_SHIP_CONFIRM_ENTRY WHERE status_id IN (''2000'', ''3000'')) AND SCBE.order_id NOT LIKE ''%%PICK%%LIST%%'' AND SCBE.order_id NOT IN ( SELECT order_id FROM default_pickpack.PPK_OLPN OLPN WHERE OLPN.org_id = SCBE.org_id AND OLPN.status < 7900) AND SCBE.created_timestamp > Now() - INTERVAL 24 hour AND SCBE.updated_timestamp < Now() - INTERVAL 20 minute;"
+}
+

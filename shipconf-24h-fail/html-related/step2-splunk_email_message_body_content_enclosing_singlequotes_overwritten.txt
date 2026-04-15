@@ -1,0 +1,11 @@
+//Named queries (enabled only (ALL) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+
+// (ALL)
+The alert condition for ''$name$'' was triggered.
+
+
+//Disabled queries
+The alert condition for ''$name$'' was triggered.
