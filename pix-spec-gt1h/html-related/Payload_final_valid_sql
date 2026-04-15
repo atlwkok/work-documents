@@ -1,13 +1,23 @@
+-- Named queries (enabled only (ALL) as of writing)
+--  Correct ’ in email payload body and replace it with ''
+-- ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
 
--- do $$
--- BEGIN
- 
--- 	END IF;
+--Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
+--paste into word document and then re-paste here.
+--REMEMBER TO REMOVE ANY LINE BREAKS, AND VALIDATE FROMEAMAIL/TOEMAIL/CCEMAIL/ATTACHMENT VALUES 
+-- AND EXECUTE json conversion script for payload below for this db-alert to ensure it was inserted correctly!
+--SELECT *
+-- FROM (
+--     SELECT 
+--         wd.*, 
+--         row_number() OVER () AS rn
+--     FROM app.warehouselocationdetail wd
+-- ) t
+-- WHERE rn between 6 and 7
+-- AND (payload::jsonb IS NOT NULL);
 
--- insert enabled alerts without payload
 --  db-alert-pix-spec-gt1h.
-
-
+ 
 insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
     select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
         from app.warehouselocation w, app.requesttype rt 
@@ -18,31 +28,6 @@ insert into app.warehouselocationdetail(description, longdescription, warehousei
                             and r.warehouseid = w.warehouseid);
 
 
-
-
-
-
-
-
--- Check if enabled alerts were properly inserted
-
-select 1 
-from app.warehouselocationdetail r, app.warehouselo
-						where r.requesttypeid = rt.requesttypeid and r.warehouseid = w.warehouseid
-  
-
-select *
-	from app.warehouselocationdetail wld, app.warehouselocation wl
-	where wld.description like ('%db-alert-pix-spec-gt1h')
-	AND wld.warehouseid = wl.warehouseid 
-	order by wl.warehouseshortname
-
-
-
-
-
-
--- insert payload for enabled alerts:
 
 
 -- Named queries (enabled only (ALL) as of writing)
@@ -70,40 +55,9 @@ update app.warehouselocationdetail set payload = '{
 
 
 
- -- (Unnamed)
+
+-- (Unnamed)
+-- unused as only 1 query required for all orgIds this time.
+
+
  
-
-
--- Check and ensure right payloads are inserted and not affecting other unrelated records
-
-
-select wld.payload, wl.warehouseshortname, wld.description
-from app.warehouselocationdetail wld join app.warehouselocation wl
-on wld.warehouseid = wl.warehouseid 
-where description != 'db-alert-pix-spec-gt1h'
-and wld.payload is not null
--- order by wld.payload
-
-
-
-
-select  wld.payload, wl.warehouseshortname, wld.description
-from app.warehouselocationdetail wld join app.warehouselocation wl
-on wld.warehouseid = wl.warehouseid 
-where description = 'db-alert-pix-spec-gt1h'
-and wld.payload is not null
-order by wld.lastupdatedon
-
-
-
--- Test to ensure payloads can successfully be converted to JSON
-
-SELECT *
-FROM (
-    SELECT 
-        wd.*, 
-        row_number() OVER () AS rn
-    FROM app.warehouselocationdetail wd
-	where description = 'db-alert-pix-spec-gt1h'
-) t 
-where (payload::jsonb IS NOT NULL);
