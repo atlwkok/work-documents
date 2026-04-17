@@ -32,7 +32,7 @@ insert into app.warehouselocationdetail(description, longdescription, warehousei
 
 -- Named queries (enabled only (ALL) as of writing)
 update app.warehouselocationdetail set payload = '{
-    "alertName":"MATM - SPO Import Failure",
+    "alertName":"iLPNS with Missing Physical Entity codeid",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
