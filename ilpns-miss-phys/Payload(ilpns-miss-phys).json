@@ -1,0 +1,69 @@
+//Named queries (enabled only (ALL) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+//Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
+//paste into word document and then re-paste here.
+//REMEMBER TO REMOVE ANY LINE BREAKS, AND VALIDATE FROMEAMAIL/TOEMAIL/CCEMAIL/ATTACHMENT VALUES 
+// AND EXECUTE json conversion script for payload below for this db-alert to ensure it was inserted correctly!
+//SELECT *
+// FROM (
+//     SELECT 
+//         wd.*, 
+//         row_number() OVER () AS rn
+//     FROM app.warehouselocationdetail wd
+// ) t
+// WHERE rn between 6 and 7
+// AND (payload::jsonb IS NOT NULL);
+
+ 
+// (ALL)
+{
+    "alertName":"iLPNS with Missing Physical Entity codeid",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.***MSP TO CLEAN UP***<br />Description: This alert highlights iLPNs where the PhysicalEntityCodeId value is null.  When the PhysicalEntityCodeId is null this can lead to Volume Violation errors during putaway consolidation.<br />Manhattan Case# 8631134 is opened for this condition.<br />Cleanup Steps:<br />Use the below endpoint and payload details to set the PhysicalEntityCodeId = ILPN for iLPN records returned from this alert.<br />POST {{app_host}}/dcinventory/api/dcinventory/ilpn/updateIlpnAndInventory<br /><br />{<br />    \"IlpnId\": \"{{IlpnId}}\",<br />    \"IlpnTypeId\": \"ILPN\",<br />    \"PhysicalEntityCodeId\": \"ILPN\" //PEC<br />}</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"DL_RNDC_MAWM_CSO@manh.com, DL_MANH_RNDC_MAWM_PSO@manh.com, wmsinternal@RNDC-USA.COM, wmsmspsupport@rndc-usa.com",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT org_id, physical_entity_code_id, ilpn_type_id, current_location_id, ilpn_id, status, process, created_timestamp FROM default_dcinventory.DCI_ILPN ILPN WHERE 1 = 1 AND status < 9000 AND physical_entity_code_id IS NULL AND ilpn_type_id = ''ILPN'' AND ( org_id NOT IN ( ''CCR'', ''ELP'', ''GRP'', ''HOU'', ''LUB'', ''SAA'' ) AND ( current_location_id NOT LIKE ''ISW%%'' OR current_location_id NOT LIKE ''%%RET%%'' ) ) ORDER BY org_id;"
+}
+
+
+
+
+
+
+
+
+//Disabled queries
+{
+    "alertName":"iLPNS with Missing Physical Entity codeid",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.***MSP TO CLEAN UP***<br />Description: This alert highlights iLPNs where the PhysicalEntityCodeId value is null.  When the PhysicalEntityCodeId is null this can lead to Volume Violation errors during putaway consolidation.<br />Manhattan Case# 8631134 is opened for this condition.<br />Cleanup Steps:<br />Use the below endpoint and payload details to set the PhysicalEntityCodeId = ILPN for iLPN records returned from this alert.<br />POST {{app_host}}/dcinventory/api/dcinventory/ilpn/updateIlpnAndInventory<br /><br />{<br />    \"IlpnId\": \"{{IlpnId}}\",<br />    \"IlpnTypeId\": \"ILPN\",<br />    \"PhysicalEntityCodeId\": \"ILPN\" //PEC<br />}</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"DL_RNDC_MAWM_CSO@manh.com, DL_MANH_RNDC_MAWM_PSO@manh.com, wmsinternal@RNDC-USA.COM, wmsmspsupport@rndc-usa.com",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT org_id, physical_entity_code_id, ilpn_type_id, current_location_id, ilpn_id, status, process, created_timestamp FROM default_dcinventory.DCI_ILPN ILPN WHERE 1 = 1 AND status < 9000 AND physical_entity_code_id IS NULL AND ilpn_type_id = ''ILPN'' AND ( org_id NOT IN ( ''CCR'', ''ELP'', ''GRP'', ''HOU'', ''LUB'', ''SAA'' ) AND ( current_location_id NOT LIKE ''ISW%%'' OR current_location_id NOT LIKE ''%%RET%%'' ) ) ORDER BY org_id;"
+}
+
+

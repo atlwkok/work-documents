@@ -1,0 +1,55 @@
+//Named queries (enabled only (ALL) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+// (ALL)
+<!DOCTYPE html>
+<html>
+<body>
+The alert condition for ''$name$'' was triggered.***MSP TO CLEAN UP***
+
+Description: This alert highlights iLPNs where the PhysicalEntityCodeId value is null.  When the PhysicalEntityCodeId is null this can lead to Volume Violation errors during putaway consolidation.
+
+Manhattan Case# 8631134 is opened for this condition.
+
+Cleanup Steps:
+
+Use the below endpoint and payload details to set the PhysicalEntityCodeId = ILPN for iLPN records returned from this alert.
+
+POST {{app_host}}/dcinventory/api/dcinventory/ilpn/updateIlpnAndInventory
+
+{
+    \"IlpnId\": \"{{IlpnId}}\",
+    \"IlpnTypeId\": \"ILPN\",
+    \"PhysicalEntityCodeId\": \"ILPN\" //PEC
+}
+
+</body>
+</html>
+
+
+
+//Disabled queries
+<!DOCTYPE html>
+<html>
+<body>
+The alert condition for ''$name$'' was triggered.***MSP TO CLEAN UP***
+
+Description: This alert highlights iLPNs where the PhysicalEntityCodeId value is null.  When the PhysicalEntityCodeId is null this can lead to Volume Violation errors during putaway consolidation.
+
+Manhattan Case# 8631134 is opened for this condition.
+
+Cleanup Steps:
+
+Use the below endpoint and payload details to set the PhysicalEntityCodeId = ILPN for iLPN records returned from this alert.
+
+POST {{app_host}}/dcinventory/api/dcinventory/ilpn/updateIlpnAndInventory
+
+{
+    \"IlpnId\": \"{{IlpnId}}\",
+    \"IlpnTypeId\": \"ILPN\",
+    \"PhysicalEntityCodeId\": \"ILPN\" //PEC
+}
+
+</body>
+</html>
