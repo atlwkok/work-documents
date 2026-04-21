@@ -1,0 +1,11 @@
+//Named queries (enabled only (RNDC) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+
+// (RNDC)
+The alert condition for ''$name$'' was triggered.
+
+This alert highlights PO import errors in TMS. POs will not tender to a carrier until the data condition mentioned in the alert is corrected and the PO successfully imports into TMS.
+
+//(only RNDC is allowed) Disabled queries

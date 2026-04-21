@@ -1,0 +1,62 @@
+-- Named queries (enabled only (RNDC) as of writing)
+--  Correct ’ in email payload body and replace it with ''
+-- ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+--Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
+--paste into word document and then re-paste here.
+--REMEMBER TO REMOVE ANY LINE BREAKS, AND VALIDATE FROMEAMAIL/TOEMAIL/CCEMAIL/ATTACHMENT VALUES 
+-- AND EXECUTE json conversion script for payload below for this db-alert to ensure it was inserted correctly!
+--SELECT *
+-- FROM (
+--     SELECT 
+--         wd.*, 
+--         row_number() OVER () AS rn
+--     FROM app.warehouselocationdetail wd
+-- ) t
+-- WHERE rn between 6 and 7
+-- AND (payload::jsonb IS NOT NULL);
+
+--  db-alert-matm-spo-import-all.
+ 
+insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
+    select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
+        from app.warehouselocation w, app.requesttype rt 
+        where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
+        and rt.description = 'db-alert-matm-spo-import-all' 
+        and not exists (select 1 from app.warehouselocationdetail r 
+                            where r.requesttypeid = rt.requesttypeid 
+                            and r.warehouseid = w.warehouseid);
+
+
+
+
+-- Named queries (enabled only (RNDC) as of writing)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"MATM - SPO Import Failure-All",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />This alert highlights PO import errors in TMS. POs will not tender to a carrier until the data condition mentioned in the alert is corrected and the PO successfully imports into TMS.</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"TMSTeam@RNDC-USA.COM, Helena.Yates@rndc-usa.com, wmsinternal@rndc-usa.com",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT CFM.created_timestamp, Substring_index(CFM.payload ->> ''$.PurchaseRequestId'', ''_'', 1) AS ''MARKET'', Substring_index(CFM.payload ->> ''$.PurchaseRequestId'', ''_'', -1) AS ''PO_NUMBER'', CFM.payload ->> ''$.BillingMethodId'' AS ''BILLING_METHOD'', CFM.payload ->> ''$.Extended.Buyer'' AS ''BUYER'', CFM.payload ->> ''$.Extended.SupplierCode'' AS ''SUPPLIER_CODE'', CFM.payload ->> ''$.Extended.SupplierName'' AS ''SUPPLIER_NAME'', CFM.error_message AS ''ERROR_CODE'', CFM.exception_messages ->> ''$[0].Description'' AS ''DESCRIPTION'' FROM default_commonutil.CUT_FAILED_MESSAGE CFM WHERE org_id = ''RNDC'' AND queue_name = ''XNT_VEN_PurchaseRequest'' ORDER BY market;"
+}' where requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-matm-spo-import-all');
+
+
+
+
+
+-- (Unnamed)
+-- unused as only 1 query enabled for RNDC orgId at this time and nothing else.
+
+
+ 
