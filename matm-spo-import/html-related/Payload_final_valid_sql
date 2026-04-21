@@ -49,7 +49,7 @@ update app.warehouselocationdetail set payload = '{
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
     "sql":"WITH t AS (SELECT CFM.created_timestamp, Substring_index(CFM.payload ->> ''$.PurchaseRequestId'', ''_'', 1) AS ''MARKET'', Substring_index(CFM.payload ->> ''$.PurchaseRequestId'', ''_'', -1) AS ''PO_NUMBER'', CFM.payload ->> ''$.BillingMethodId'' AS ''BILLING_METHOD'', CFM.payload ->> ''$.Extended.Buyer'' AS ''BUYER'', CFM.payload ->> ''$.Extended.SupplierCode'' AS ''SUPPLIER_CODE'', CFM.payload ->> ''$.Extended.SupplierName'' AS ''SUPPLIER_NAME'', CFM.error_message AS ''ERROR_CODE'', CFM.exception_messages ->> ''$[0].Description'' AS ''DESCRIPTION'' FROM default_commonutil.CUT_FAILED_MESSAGE CFM WHERE org_id = ''RNDC'' AND queue_name = ''XNT_VEN_PurchaseRequest'' AND error_code = ''VCO::171'' AND created_timestamp >= Now() - interval 1 day) SELECT * FROM t WHERE t.billing_method = ''Collect'' ORDER BY market;"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='RNDC') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-matm-spo-import');
+}' where requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-matm-spo-import');
 
 
 
