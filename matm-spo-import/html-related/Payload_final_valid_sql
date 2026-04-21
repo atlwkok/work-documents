@@ -1,4 +1,4 @@
--- Named queries (enabled only (ALL) as of writing)
+-- Named queries (enabled only (RNDC) as of writing)
 --  Correct ’ in email payload body and replace it with ''
 -- ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
 
@@ -16,13 +16,13 @@
 -- WHERE rn between 6 and 7
 -- AND (payload::jsonb IS NOT NULL);
 
---  db-alert-shipconf-24h-fail.
+--  db-alert-matm-spo-import.
  
 insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
     select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
         from app.warehouselocation w, app.requesttype rt 
         where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
-        and rt.description = 'db-alert-shipconf-24h-fail' 
+        and rt.description = 'db-alert-matm-spo-import' 
         and not exists (select 1 from app.warehouselocationdetail r 
                             where r.requesttypeid = rt.requesttypeid 
                             and r.warehouseid = w.warehouseid);
@@ -30,9 +30,9 @@ insert into app.warehouselocationdetail(description, longdescription, warehousei
 
 
 
--- Named queries (enabled only (ALL) as of writing)
+-- Named queries (enabled only (RNDC) as of writing)
 update app.warehouselocationdetail set payload = '{
-    "alertName":"MAWM Unprocessed Or Failed Ship Confirms Last 24 Hours",
+    "alertName":"MATM - SPO Import Failure",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -41,24 +41,21 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /></pre>",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />This alert highlights PO import errors in TMS. POs will not tender to a carrier until the data condition mentioned in the alert is corrected and the PO successfully imports into TMS.</pre>",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"wmsinternal@RNDC-USA.COM,WMSConsultant@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com, WMSMSPSupport@RNDC-USA.COM",
-        "ccEmail":"",
+        "toEmail":"IBTransportation@rndc-usa.com, InventoryPlanners-SupplyChain@rndc-usa.com, newsupplier@rndc-usa.com",
+        "ccEmail":"TMSTeam@RNDC-USA.COM, Tonja.Speegle@RNDC-USA.COM, Brenda.Weeks@RNDC-USA.COM, Bobby.Grant@RNDC-USA.COM, WMSMSPSupport@rndc-usa.com, Helena.Yates@rndc-usa.com, pam.thomas@rndc-usa.com, wmsinternal@rndc-usa.com",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT SCB.org_id, ''SHIP_CONFIRM_BATCH'' AS ''SHIP_CONFIRM_TYPE'' , SCB.ship_confirm_batch_id, '' '' AS ''ORDER'', Concat(SCBS.status_id,''-'',SCBS.ship_confirm_batch_status_desc) ''STATUS'' , SCB.created_timestamp, SCB.updated_timestamp FROM default_shipconfirm.SHC_SHIP_CONFIRM_BATCH SCB LEFT JOIN default_shipconfirm.SHC_SHIP_CONFIRM_BATCH_STATUS SCBS ON SCBS.status_id = SCB.status_id WHERE SCB.status_id <> ''3000'' AND SCB.created_timestamp > Now() - INTERVAL 24 hour AND SCB.updated_timestamp < Now() - INTERVAL 20 minute UNION ALL SELECT SCBE.org_id, ''SHIP_CONFIRM_BATCH_ENTRY'' AS ''SHIP_CONFIRM_TYPE'', SCBE.ship_confirm_batch_id, SCBE.order_id AS ''ORDER'', Concat(SCBS.status_id,''-'',SCBS.ship_confirm_batch_status_desc) AS ''STATUS'' , SCBE.created_timestamp, SCBE.updated_timestamp FROM default_shipconfirm.SHC_SHIP_CONFIRM_ENTRY SCBE LEFT JOIN default_shipconfirm.SHC_SHIP_CONFIRM_BATCH_STATUS SCBS ON SCBS.status_id = SCBE.status_id WHERE SCBE.status_id NOT IN (''3000'', ''2000'') AND SCBE.order_id NOT IN ( SELECT original_order_id FROM default_dcorder.DCO_ORIGINAL_ORDER WHERE minimum_status = ''9000'') AND SCBE.order_id NOT IN ( SELECT order_id FROM default_shipconfirm.SHC_SHIP_CONFIRM_ENTRY WHERE status_id IN (''2000'', ''3000'')) AND SCBE.order_id NOT LIKE ''%%PICK%%LIST%%'' AND SCBE.order_id NOT IN ( SELECT order_id FROM default_pickpack.PPK_OLPN OLPN WHERE OLPN.org_id = SCBE.org_id AND OLPN.status < 7900) AND SCBE.created_timestamp > Now() - INTERVAL 24 hour AND SCBE.updated_timestamp < Now() - INTERVAL 20 minute;"
-}' where requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-shipconf-24h-fail');
-
-
-
+    "sql":"WITH t AS (SELECT CFM.created_timestamp, Substring_index(CFM.payload ->> ''$.PurchaseRequestId'', ''_'', 1) AS ''MARKET'', Substring_index(CFM.payload ->> ''$.PurchaseRequestId'', ''_'', -1) AS ''PO_NUMBER'', CFM.payload ->> ''$.BillingMethodId'' AS ''BILLING_METHOD'', CFM.payload ->> ''$.Extended.Buyer'' AS ''BUYER'', CFM.payload ->> ''$.Extended.SupplierCode'' AS ''SUPPLIER_CODE'', CFM.payload ->> ''$.Extended.SupplierName'' AS ''SUPPLIER_NAME'', CFM.error_message AS ''ERROR_CODE'', CFM.exception_messages ->> ''$[0].Description'' AS ''DESCRIPTION'' FROM default_commonutil.CUT_FAILED_MESSAGE CFM WHERE org_id = ''RNDC'' AND queue_name = ''XNT_VEN_PurchaseRequest'' AND error_code = ''VCO::171'' AND created_timestamp >= Now() - interval 1 day) SELECT * FROM t WHERE t.billing_method = ''Collect'' ORDER BY market;"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='RNDC') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-matm-spo-import');
 
 
 
 
 -- (Unnamed)
--- unused as only 1 query required for all orgIds this time.
+-- unused as only 1 query enabled for RNDC orgId at this time and nothing else.
 
 
  
