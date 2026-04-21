@@ -1,0 +1,46 @@
+//Named queries (enabled only (RNDC) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+//Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
+//paste into word document and then re-paste here.
+//REMEMBER TO REMOVE ANY LINE BREAKS, AND VALIDATE FROMEAMAIL/TOEMAIL/CCEMAIL/ATTACHMENT VALUES 
+// AND EXECUTE json conversion script for payload below for this db-alert to ensure it was inserted correctly!
+//SELECT *
+// FROM (
+//     SELECT 
+//         wd.*, 
+//         row_number() OVER () AS rn
+//     FROM app.warehouselocationdetail wd
+// ) t
+// WHERE rn between 6 and 7
+// AND (payload::jsonb IS NOT NULL);
+
+ 
+// (RNDC)
+{
+    "alertName":"MATM - SPO Import Failure",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />This alert highlights PO import errors in TMS. POs will not tender to a carrier until the data condition mentioned in the alert is corrected and the PO successfully imports into TMS.</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"IBTransportation@rndc-usa.com, InventoryPlanners-SupplyChain@rndc-usa.com, newsupplier@rndc-usa.com",
+        "ccEmail":"TMSTeam@RNDC-USA.COM, Tonja.Speegle@RNDC-USA.COM, Brenda.Weeks@RNDC-USA.COM, Bobby.Grant@RNDC-USA.COM,
+WMSMSPSupport@rndc-usa.com, Helena.Yates@rndc-usa.com,
+pam.thomas@rndc-usa.com, wmsinternal@rndc-usa.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"WITH t AS (SELECT CFM.created_timestamp, Substring_index(CFM.payload ->> ''$.PurchaseRequestId'', ''_'', 1) AS ''MARKET'', Substring_index(CFM.payload ->> ''$.PurchaseRequestId'', ''_'', -1) AS ''PO_NUMBER'', CFM.payload ->> ''$.BillingMethodId'' AS ''BILLING_METHOD'', CFM.payload ->> ''$.Extended.Buyer'' AS ''BUYER'', CFM.payload ->> ''$.Extended.SupplierCode'' AS ''SUPPLIER_CODE'', CFM.payload ->> ''$.Extended.SupplierName'' AS ''SUPPLIER_NAME'', CFM.error_message AS ''ERROR_CODE'', CFM.exception_messages ->> ''$[0].Description'' AS ''DESCRIPTION'' FROM default_commonutil.CUT_FAILED_MESSAGE CFM WHERE org_id = ''RNDC'' AND queue_name = ''XNT_VEN_PurchaseRequest'' AND error_code = ''VCO::171'' AND created_timestamp >= Now() - interval 1 day) SELECT * FROM t WHERE t.billing_method = ''Collect'' ORDER BY market;`"
+}
+
+
+
+//(only RNDC is allowed) Disabled queries
+ 
