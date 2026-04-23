@@ -1,0 +1,154 @@
+--  Named queries (enabled (ARK, PEN, POR, ORL) as of writing)
+--  Correct ’ in email payload body and replace it with ''
+-- ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+--Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
+--paste into word document and then re-paste here.
+--REMEMBER TO REMOVE ANY LINE BREAKS, AND VALIDATE FROMEAMAIL/TOEMAIL/CCEMAIL/ATTACHMENT VALUES 
+-- AND EXECUTE json conversion script for payload below for this db-alert to ensure it was inserted correctly!
+--SELECT *
+-- FROM (
+--     SELECT 
+--         wd.*, 
+--         row_number() OVER () AS rn
+--     FROM app.warehouselocationdetail wd
+-- ) t
+-- WHERE rn between 6 and 7
+-- AND (payload::jsonb IS NOT NULL);
+
+--  db-alert-tmp-resv-no-inv.
+ 
+insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
+    select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
+        from app.warehouselocation w, app.requesttype rt 
+        where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
+        and rt.description = 'db-alert-tmp-resv-no-inv' 
+        and not exists (select 1 from app.warehouselocationdetail r 
+                            where r.requesttypeid = rt.requesttypeid 
+                            and r.warehouseid = w.warehouseid);
+
+
+
+--  Named queries (enabled (ARK, PEN, POR, ORL) as of writing)
+--   ARK
+update app.warehouselocationdetail set payload = '{
+    "alertName":"Temporary Reserve Locations W/ Assignments, But No Inventory",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />***MSP TO CLEAN UP***</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Kim.Crawford@rndc-usa.com, Joe.Thompson@rndc-usa.com, Joshua.Edens@rndc-usa.com",
+        "ccEmail":"WMSInternal@rndc-usa.com, WMSMSPSupport@rndc-usa.com, WMSConsultant@rndc-usa.com, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT ASSIGN.ORG_ID, ASSIGN.LOCATION_ID, ASSIGN.ITEM_ID, ASSIGN.ASSIGNMENT_ID FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT ASSIGN LEFT JOIN default_dcinventory.DCI_LOCATION LOC ON LOC.LOCATION_ID = ASSIGN.LOCATION_ID AND SUBSTR(LOC.PROFILE_ID,1,3) = ASSIGN.ORG_ID WHERE ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN1.LOCATION_ID FROM default_dcinventory.DCI_INVENTORY INVN1 WHERE INVN1.LOCATION_ID IS NOT NULL ) AND ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN2.INVENTORY_CONTAINER_ID FROM default_dcinventory.DCI_INVENTORY INVN2 WHERE INVN2.INVENTORY_CONTAINER_TYPE_ID = ''LOCATION'' ) AND LOC.STORAGE_UOM_ID = ''LPN'' AND LOC.SKU_DEDICATION_TYPE_ID = ''TEMPORARY'' AND LOC.LOCATION_TYPE_ID = ''STORAGE'' AND ASSIGN.ORG_ID = $orgId"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='ARK') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-tmp-resv-no-inv');
+
+--   PEN
+update app.warehouselocationdetail set payload = '{
+    "alertName":"Temporary Reserve Locations W/ Assignments, But No Inventory",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />***MSP TO CLEAN UP***</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT ASSIGN.ORG_ID, ASSIGN.LOCATION_ID, ASSIGN.ITEM_ID, ASSIGN.ASSIGNMENT_ID FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT ASSIGN LEFT JOIN default_dcinventory.DCI_LOCATION LOC ON LOC.LOCATION_ID = ASSIGN.LOCATION_ID AND SUBSTR(LOC.PROFILE_ID,1,3) = ASSIGN.ORG_ID WHERE ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN1.LOCATION_ID FROM default_dcinventory.DCI_INVENTORY INVN1 WHERE INVN1.LOCATION_ID IS NOT NULL ) AND ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN2.INVENTORY_CONTAINER_ID FROM default_dcinventory.DCI_INVENTORY INVN2 WHERE INVN2.INVENTORY_CONTAINER_TYPE_ID = ''LOCATION'' ) AND LOC.STORAGE_UOM_ID = ''LPN'' AND LOC.SKU_DEDICATION_TYPE_ID = ''TEMPORARY'' AND LOC.LOCATION_TYPE_ID = ''STORAGE'' AND ASSIGN.ORG_ID = $orgId"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='ORL') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-tmp-resv-no-inv');
+
+
+--   POR
+update app.warehouselocationdetail set payload = '{
+    "alertName":"Temporary Reserve Locations W/ Assignments, But No Inventory",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br /><br />***MSP TO CLEAN UP*** <br /><br />Description: <br />1. Location Inventory UI – Rebuild the location<br />2. Location Item Assignments UI – Delete the Location Item Assignment<br /><br />Note: Manhattan Case 7092460 is opened for this.</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"bryce.meyer@rndc-usa.com, Michael.Ferdinand@Penske.com, abel.paucardelacruz@rndc-usa.com, Matthew.Chavez@Penske.com,Jesse.Butler@Penske.com",
+        "ccEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT ASSIGN.ORG_ID, ASSIGN.LOCATION_ID, ASSIGN.ITEM_ID, ASSIGN.ASSIGNMENT_ID FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT ASSIGN LEFT JOIN default_dcinventory.DCI_LOCATION LOC ON LOC.LOCATION_ID = ASSIGN.LOCATION_ID AND SUBSTR(LOC.PROFILE_ID,1,3) = ASSIGN.ORG_ID WHERE ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN1.LOCATION_ID FROM default_dcinventory.DCI_INVENTORY INVN1 WHERE INVN1.LOCATION_ID IS NOT NULL ) AND ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN2.INVENTORY_CONTAINER_ID FROM default_dcinventory.DCI_INVENTORY INVN2 WHERE INVN2.INVENTORY_CONTAINER_TYPE_ID = ''LOCATION'' ) AND LOC.STORAGE_UOM_ID = ''LPN'' AND LOC.SKU_DEDICATION_TYPE_ID = ''TEMPORARY'' AND LOC.LOCATION_TYPE_ID = ''STORAGE'' AND ASSIGN.ORG_ID = $orgId"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='PHO') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-tmp-resv-no-inv');
+
+
+--  ORL
+update app.warehouselocationdetail set payload = '{
+    "alertName":"Temporary Reserve Locations W/ Assignments, But No Inventory",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br /><br />***MSP TO CLEAN UP*** <br /><br />Description: <br />1. Location Inventory UI – Rebuild the location<br />2. Location Item Assignments UI – Delete the Location Item Assignment<br /><br />Note: Manhattan Case 7092460 is opened for this.</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Garry.Martinez@rndc-usa.com, Kenny.Keenan@rndc-usa.com, STEPHEN.KING@RNDC-USA.COM",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT ASSIGN.ORG_ID, ASSIGN.LOCATION_ID, ASSIGN.ITEM_ID, ASSIGN.ASSIGNMENT_ID FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT ASSIGN LEFT JOIN default_dcinventory.DCI_LOCATION LOC ON LOC.LOCATION_ID = ASSIGN.LOCATION_ID AND SUBSTR(LOC.PROFILE_ID,1,3) = ASSIGN.ORG_ID WHERE ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN1.LOCATION_ID FROM default_dcinventory.DCI_INVENTORY INVN1 WHERE INVN1.LOCATION_ID IS NOT NULL ) AND ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN2.INVENTORY_CONTAINER_ID FROM default_dcinventory.DCI_INVENTORY INVN2 WHERE INVN2.INVENTORY_CONTAINER_TYPE_ID = ''LOCATION'' ) AND LOC.STORAGE_UOM_ID = ''LPN'' AND LOC.SKU_DEDICATION_TYPE_ID = ''TEMPORARY'' AND LOC.LOCATION_TYPE_ID = ''STORAGE'' AND ASSIGN.ORG_ID = $orgId"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='ORL') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-tmp-resv-no-inv');
+
+
+
+
+
+
+
+-- (Unnamed)
+--  Disabled queries
+update app.warehouselocationdetail set payload = '{
+    "alertName":"Temporary Reserve Locations W/ Assignments, But No Inventory",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br /><br />***MSP TO CLEAN UP*** <br /><br />Description: <br />1. Location Inventory UI – Rebuild the location<br />2. Location Item Assignments UI – Delete the Location Item Assignment<br /><br />Note: Manhattan Case 7092460 is opened for this.</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT ASSIGN.ORG_ID, ASSIGN.LOCATION_ID, ASSIGN.ITEM_ID, ASSIGN.ASSIGNMENT_ID FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT ASSIGN LEFT JOIN default_dcinventory.DCI_LOCATION LOC ON LOC.LOCATION_ID = ASSIGN.LOCATION_ID AND SUBSTR(LOC.PROFILE_ID,1,3) = ASSIGN.ORG_ID WHERE ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN1.LOCATION_ID FROM default_dcinventory.DCI_INVENTORY INVN1 WHERE INVN1.LOCATION_ID IS NOT NULL ) AND ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN2.INVENTORY_CONTAINER_ID FROM default_dcinventory.DCI_INVENTORY INVN2 WHERE INVN2.INVENTORY_CONTAINER_TYPE_ID = ''LOCATION'' ) AND LOC.STORAGE_UOM_ID = ''LPN'' AND LOC.SKU_DEDICATION_TYPE_ID = ''TEMPORARY'' AND LOC.LOCATION_TYPE_ID = ''STORAGE'' AND ASSIGN.ORG_ID = $orgId"
+}' 
+where warehouseid in (select wl.warehouseid
+            from app.warehouselocation wl  
+            where wl.warehouseshortname not in  ('ARK', 'ORL', 'PEN', 'POR'))
+    and requesttypeid=(select rt.requesttypeid
+                from app.requesttype rt 
+                where rt.description='db-alert-tmp-resv-no-inv');
+
+
+ 
