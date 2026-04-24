@@ -1,0 +1,12 @@
+//Named queries (enabled (ABQ, ARK, AUB, PEN, POR, ROM, WSD) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+
+// (ABQ, ARK, AUB, PEN, POR, ROM, WSD)
+<!DOCTYPE html><html><body>The alert condition for ''$name$'' was triggered.<br/><br/>Orders in WMS should not remain open greater than 7 days.  The DO needs to be shipped or cancelled in WMS.  This impacts customer accounts receivables.</body></html>
+
+
+
+//Disabled queries
+<!DOCTYPE html><html><body>The alert condition for ''$name$'' was triggered.<br/><br/>Orders in WMS should not remain open greater than 7 days.  The DO needs to be shipped or cancelled in WMS.  This impacts customer accounts receivables.</body></html>
