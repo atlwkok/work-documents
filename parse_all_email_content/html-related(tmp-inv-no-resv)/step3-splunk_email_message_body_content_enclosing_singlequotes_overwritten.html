@@ -1,0 +1,37 @@
+//Named queries (enabled (ARK, ORL, PEN, POR, SAA, WSD) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+
+// (ARK, ORL, PEN, POR, SAA, WSD)
+<!DOCTYPE html>
+<html>
+<body>
+The alert condition for ''$name$'' was triggered.
+
+***MSP TO CLEAN UP***
+
+Description:
+1. Location Inventory UI – Rebuild the location
+2. Location Item Assignments UI – Delete the Location Item Assignment
+
+Note: Manhattan Case 7092460 and 8142072 is opened for this.
+</body>
+</html>
+
+
+//Disabled queries
+<!DOCTYPE html>
+<html>
+<body>
+The alert condition for ''$name$'' was triggered.
+
+***MSP TO CLEAN UP***
+
+Description:
+1. Location Inventory UI – Rebuild the location
+2. Location Item Assignments UI – Delete the Location Item Assignment
+
+Note: Manhattan Case 7092460 and 8142072 is opened for this.
+</body>
+</html>
