@@ -1,0 +1,78 @@
+//Named queries (enabled (ABQ, ARK, AUB, PEN, POR, ROM, WSD) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+//Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
+//paste into word document and then re-paste here.
+//REMEMBER TO REMOVE ANY LINE BREAKS, AND VALIDATE FROMEAMAIL/TOEMAIL/CCEMAIL/ATTACHMENT VALUES 
+// AND EXECUTE json conversion script for payload below for this db-alert to ensure it was inserted correctly!
+//SELECT *
+// FROM (
+//     SELECT 
+//         wd.*, 
+//         row_number() OVER () AS rn
+//     FROM app.warehouselocationdetail wd
+// ) t
+// WHERE rn between 6 and 7
+// AND (payload::jsonb IS NOT NULL);
+
+ 
+// ALL
+{
+    "alertName":"MAWM - Items Weight With Large Dimensions",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@RNDC-USA.COM, anamburi@manh.com, DL_RNDC_MAWM_CSO@manh.com, mcurtis@manh.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT ORG, COUNT(*) AS ''ORG_COUNT'', JSON_ARRAYAGG( JSON_OBJECT( ''ItemId'', ITEM_ID, ''StandardQuantityUomIdDisplay'', STANDARD_QUANTITY_UOM_ID, ''UomId'', UOM_ID, ''Quantity'', QUANTITY ) ) AS ''SPLUNK'' FROM ( SELECT LEFT(II.PROFILE_ID, 3) AS ''ORG'', II.ITEM_ID, II.DESCRIPTION, IP.VOLUME, IP.WEIGHT, IP.QUANTITY, IP.STANDARD_QUANTITY_UOM_ID, IP.UOM_ID FROM default_item_master.ITE_ITEM_PACKAGE IP JOIN default_item_master.ITE_ITEM II ON IP.ITEM_PK = II.PK WHERE IP.STANDARD_QUANTITY_UOM_ID IN (''PACK'', ''UNIT'') AND IP.WEIGHT > ''100000'' AND CONCAT(LEFT(II.PROFILE_ID,3), II.ITEM_ID) IN (SELECT CONCAT(ORG_ID, ITEM_ID) FROM default_dcinventory.DCI_INVENTORY) ) package GROUP BY ORG ORDER BY ORG;"
+}
+
+
+
+
+
+
+
+
+//Disabled queries
+{
+    "alertName":"MAWM - Items Weight With Large Dimensions",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@RNDC-USA.COM, anamburi@manh.com, DL_RNDC_MAWM_CSO@manh.com, mcurtis@manh.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT ORG, COUNT(*) AS ''ORG_COUNT'', JSON_ARRAYAGG( JSON_OBJECT( ''ItemId'', ITEM_ID, ''StandardQuantityUomIdDisplay'', STANDARD_QUANTITY_UOM_ID, ''UomId'', UOM_ID, ''Quantity'', QUANTITY ) ) AS ''SPLUNK'' FROM ( SELECT LEFT(II.PROFILE_ID, 3) AS ''ORG'', II.ITEM_ID, II.DESCRIPTION, IP.VOLUME, IP.WEIGHT, IP.QUANTITY, IP.STANDARD_QUANTITY_UOM_ID, IP.UOM_ID FROM default_item_master.ITE_ITEM_PACKAGE IP JOIN default_item_master.ITE_ITEM II ON IP.ITEM_PK = II.PK WHERE IP.STANDARD_QUANTITY_UOM_ID IN (''PACK'', ''UNIT'') AND IP.WEIGHT > ''100000'' AND CONCAT(LEFT(II.PROFILE_ID,3), II.ITEM_ID) IN (SELECT CONCAT(ORG_ID, ITEM_ID) FROM default_dcinventory.DCI_INVENTORY) ) package GROUP BY ORG ORDER BY ORG;"
+}
+
+
+
+
+
+
+
+
+
+
+ 

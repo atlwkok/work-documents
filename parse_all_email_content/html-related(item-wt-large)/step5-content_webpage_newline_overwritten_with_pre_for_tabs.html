@@ -1,0 +1,11 @@
+//Named queries (enabled only (ALL) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+
+// (ALL)
+<!DOCTYPE html><html><body><pre>The alert condition for ''$name$'' was triggered.<br/> <br/>***MSP TO CLEAN UP***<br/> <br/>Items with Large Weight Dimensions. Please perform the below update to clear the records.<br/> <br/>POST {{app_host}}/item-master/api/item-master/item/save<br/>{<br/>    "ItemId": "{{ItemId}}",<br/>     "Weight": 32.000000000,<br/>    "ItemPackage": [<br/>        {<br/>            "StandardQuantityUomIdDisplay": "{{StandardQuantityUomIdDisplay}}",<br/>            "Quantity": {{Quantity}},<br/>             "Weight": 32.000000000,<br/>            "UomId": "{{UomId}}"<br/>        }<br/>    ]<br/>}</pre></body></html>
+
+
+//Disabled queries
+<!DOCTYPE html><html><body><pre>The alert condition for ''$name$'' was triggered.<br/> <br/>***MSP TO CLEAN UP***<br/> <br/>Items with Large Weight Dimensions. Please perform the below update to clear the records.<br/> <br/>POST {{app_host}}/item-master/api/item-master/item/save<br/>{<br/>    "ItemId": "{{ItemId}}",<br/>     "Weight": 32.000000000,<br/>    "ItemPackage": [<br/>        {<br/>            "StandardQuantityUomIdDisplay": "{{StandardQuantityUomIdDisplay}}",<br/>            "Quantity": {{Quantity}},<br/>             "Weight": 32.000000000,<br/>            "UomId": "{{UomId}}"<br/>        }<br/>    ]<br/>}</pre></body></html>
