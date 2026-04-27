@@ -1,0 +1,50 @@
+//Named queries (enabled only (ALL) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+
+// (ALL)
+The alert condition for '$name$' was triggered.
+ 
+***MSP TO CLEAN UP***
+ 
+Items with Large Volume Dimensions. Please perform the below update to clear the records.
+ 
+POST {{app_host}}/item-master/api/item-master/item/save
+{
+    "ItemId": "{{ItemId}}",
+
+    "Volume": 1.00,
+
+    "ItemPackage": [
+        {
+            "StandardQuantityUomIdDisplay": "{{StandardQuantityUomIdDisplay}}",
+            "Quantity": {{Quantity}},
+            "Volume": 1.00,
+            "UomId": "{{UomId}}"
+        }
+    ]
+}
+
+//Disabled queries
+The alert condition for '$name$' was triggered.
+ 
+***MSP TO CLEAN UP***
+ 
+Items with Large Volume Dimensions. Please perform the below update to clear the records.
+ 
+POST {{app_host}}/item-master/api/item-master/item/save
+{
+    "ItemId": "{{ItemId}}",
+
+    "Volume": 1.00,
+
+    "ItemPackage": [
+        {
+            "StandardQuantityUomIdDisplay": "{{StandardQuantityUomIdDisplay}}",
+            "Quantity": {{Quantity}},
+            "Volume": 1.00,
+            "UomId": "{{UomId}}"
+        }
+    ]
+}
