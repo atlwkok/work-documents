@@ -9,7 +9,7 @@
 SELECT Substr(profile_id, 1, 3) 'WHSE',
        static_route_id,
        ext_threshold 'THRESHOLD_VALUE'
-FROM   default_routing.rtg_static_route
+FROM   default_routing.RTG_STATIC_ROUTE
 WHERE  ext_threshold IS NULL
        AND profile_id = '$orgId_Org_Profile';
 
@@ -17,24 +17,24 @@ corrected:
 SELECT Substr(profile_id, 1, 3) 'WHSE',
        static_route_id,
        ext_threshold 'THRESHOLD_VALUE'
-FROM   default_routing.rtg_static_route
+FROM   default_routing.RTG_STATIC_ROUTE
 WHERE  ext_threshold IS NULL
        AND profile_id = concat($orgId, '_Org_Profile');
 
 
 -- Flattening SQL query to single line (paste and copy from chrome search bar)
- SELECT Substr(profile_id, 1, 3) 'WHSE',        static_route_id,        ext_threshold 'THRESHOLD_VALUE' FROM   default_routing.rtg_static_route WHERE  ext_threshold IS NULL        AND profile_id = '$orgId_Org_Profile'; 
+ SELECT Substr(profile_id, 1, 3) 'WHSE',        static_route_id,        ext_threshold 'THRESHOLD_VALUE' FROM   default_routing.RTG_STATIC_ROUTE WHERE  ext_threshold IS NULL        AND profile_id = concat($orgId, '_Org_Profile');
 
 -- Replacing any space > 1 size with only 1 space (in VS code, search using regex -> \s\s+ and then replace with single space); verify with https://www.dpriver.com/pp/sqlformat.htm that it's equal to processed query
-SELECT Substr(profile_id, 1, 3) 'WHSE', static_route_id, ext_threshold 'THRESHOLD_VALUE' FROM default_routing.rtg_static_route WHERE ext_threshold IS NULL AND profile_id = '$orgId_Org_Profile'; 
+SELECT Substr(profile_id, 1, 3) 'WHSE', static_route_id, ext_threshold 'THRESHOLD_VALUE' FROM default_routing.RTG_STATIC_ROUTE WHERE ext_threshold IS NULL AND profile_id = concat($orgId, '_Org_Profile');
 
 -- Query with aliases surrounded by double quotes, to be inserted into excel as part of payload after converting to string with no newlines to be value of sql property in payload.
 -- When referring to strings in SQL query, should be surrounded by single quote.
-SELECT Substr(profile_id, 1, 3) ''WHSE'', static_route_id, ext_threshold ''THRESHOLD_VALUE'' FROM default_routing.rtg_static_route WHERE ext_threshold IS NULL AND profile_id = ''$orgId_Org_Profile''; 
+SELECT Substr(profile_id, 1, 3) ''WHSE'', static_route_id, ext_threshold ''THRESHOLD_VALUE'' FROM default_routing.RTG_STATIC_ROUTE WHERE ext_threshold IS NULL AND profile_id = concat($orgId, ''_Org_Profile'');
 
 
 -- Query with table name in all caps, otherwise MySQL will not be able to find the table.
- SELECT Substr(profile_id, 1, 3) ''WHSE'', static_route_id, ext_threshold ''THRESHOLD_VALUE'' FROM default_routing.RTG_STATIC_ROUTE WHERE ext_threshold IS NULL AND profile_id = ''$orgId_Org_Profile'' 
+SELECT Substr(profile_id, 1, 3) ''WHSE'', static_route_id, ext_threshold ''THRESHOLD_VALUE'' FROM default_routing.RTG_STATIC_ROUTE WHERE ext_threshold IS NULL AND profile_id = concat($orgId, ''_Org_Profile'');
 
 -- !!!!!!!!!!!!!!!!!!REMEMBER TO CAPITALIZE ALL TABLE NAMES OTHERWISE MYSQL WILL THROW AN ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 --  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
