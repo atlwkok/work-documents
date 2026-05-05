@@ -1,0 +1,10 @@
+//Named queries (enabled only (ALL) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+
+// (ALL)
+<!DOCTYPE html><html><body>The alert condition for ''$name$'' was triggered.<br /> <br />Note: Manhattan case 7977755 is opened for this.  Review Cubing Strategy Cube to Capacity Break Criteria<br /> <br />Note: Manhattan case 7107223 is opened and closed for this. New case 7977755 is now opened to track this issue.  Review Cubing Strategy Cube to Capacity Break Criteria</body></html>
+
+//Disabled queries
+<!DOCTYPE html><html><body>The alert condition for ''$name$'' was triggered.<br />Note: Manhattan case 7977755 is opened for this.  Review Cubing Strategy Cube to Capacity Break Criteria<br />Note: Manhattan case 7107223 is opened and closed for this. New case 7977755 is now opened to track this issue.  Review Cubing Strategy Cube to Capacity Break Criteria</body></html>

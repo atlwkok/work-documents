@@ -1,0 +1,100 @@
+//Named queries (enabled (SAA, POR) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+//Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
+//paste into word document and then re-paste here.
+//REMEMBER TO REMOVE ANY LINE BREAKS, AND VALIDATE FROMEAMAIL/TOEMAIL/CCEMAIL/ATTACHMENT VALUES 
+// AND EXECUTE json conversion script for payload below for this db-alert to ensure it was inserted correctly!
+//SELECT *
+// FROM (
+//     SELECT 
+//         wd.*, 
+//         row_number() OVER () AS rn
+//     FROM app.warehouselocationdetail wd
+// ) t
+// WHERE rn between 6 and 7
+// AND (payload::jsonb IS NOT NULL);
+
+ 
+// SAA
+{
+    "alertName":"Shipped Olpn W/ Consolidation Location Assignment",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />Manhattan Case 8435111 is open for this.<br /><br />***MSP TO CLEAN UP***<br /><br />Steps to Clear:<br /><br />Delete the consolidation location assignments using the following endpoint.<br /><br /><br />DELETE {{app_host}}/dcconsolidation/api/stagingLocationAssignment/locationCapacityTracking/{{PK}}<br /><br /><br /><br /><br />***MSP TO CLEAN UP*** <br /><br />Description: <br />1. Location Inventory UI – Rebuild the location<br />2. Location Item Assignments UI – Delete the Location Item Assignment<br /><br />Note: Manhattan Case 7092460 is opened for this.</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"select CLIA.ORG_ID, CLIA.LPN_ID, CLIA.LOCATION_ID, CLIA.PK, CLIA.UPDATED_TIMESTAMP, CONCAT(O.STATUS,''-'',STAT.DESCRIPTION) ''OLPN_STATUS'' from default_dcconsolidation.SLA_LPN_LOCATION_ASSIGNMENT CLIA LEFT JOIN default_pickpack.PPK_OLPN O ON O.ORG_ID = CLIA.ORG_ID AND CLIA.LPN_ID = O.OLPN_ID LEFT JOIN default_pickpack.PPK_OLPN_STATUS STAT ON STAT.OLPN_STATUS_ID = O.STATUS WHERE CLIA.ORG_ID = $orgId AND O.STATUS = ''8000'';"
+}
+
+
+
+
+
+
+
+// POR
+{
+    "alertName":"Shipped Olpn W/ Consolidation Location Assignment",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />Manhattan Case 8435111 is open for this.<br /><br />***MSP TO CLEAN UP***<br /><br />Steps to Clear:<br /><br />Delete the consolidation location assignments using the following endpoint.<br /><br /><br />DELETE {{app_host}}/dcconsolidation/api/stagingLocationAssignment/locationCapacityTracking/{{PK}}<br /><br /><br /><br /><br />***MSP TO CLEAN UP*** <br /><br />Description: <br />1. Location Inventory UI – Rebuild the location<br />2. Location Item Assignments UI – Delete the Location Item Assignment<br /><br />Note: Manhattan Case 7092460 is opened for this.</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"select CLIA.ORG_ID, CLIA.LPN_ID, CLIA.LOCATION_ID, CLIA.PK, CLIA.UPDATED_TIMESTAMP, CONCAT(O.STATUS,''-'',STAT.DESCRIPTION) ''OLPN_STATUS'' from default_dcconsolidation.SLA_LPN_LOCATION_ASSIGNMENT CLIA LEFT JOIN default_pickpack.PPK_OLPN O ON O.ORG_ID = CLIA.ORG_ID AND CLIA.LPN_ID = O.OLPN_ID LEFT JOIN default_pickpack.PPK_OLPN_STATUS STAT ON STAT.OLPN_STATUS_ID = O.STATUS WHERE CLIA.ORG_ID = $orgId AND O.STATUS = ''8000'';"
+}
+
+
+
+
+
+
+
+
+//Disabled queries
+{
+    "alertName":"Shipped Olpn W/ Consolidation Location Assignment",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />Manhattan Case 8435111 is open for this.<br /><br />***MSP TO CLEAN UP***<br /><br />Steps to Clear:<br /><br />Delete the consolidation location assignments using the following endpoint.<br /><br /><br />DELETE {{app_host}}/dcconsolidation/api/stagingLocationAssignment/locationCapacityTracking/{{PK}}<br /><br /><br /><br /><br />***MSP TO CLEAN UP*** <br /><br />Description: <br />1. Location Inventory UI – Rebuild the location<br />2. Location Item Assignments UI – Delete the Location Item Assignment<br /><br />Note: Manhattan Case 7092460 is opened for this.</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"select CLIA.ORG_ID, CLIA.LPN_ID, CLIA.LOCATION_ID, CLIA.PK, CLIA.UPDATED_TIMESTAMP, CONCAT(O.STATUS,''-'',STAT.DESCRIPTION) ''OLPN_STATUS'' from default_dcconsolidation.SLA_LPN_LOCATION_ASSIGNMENT CLIA LEFT JOIN default_pickpack.PPK_OLPN O ON O.ORG_ID = CLIA.ORG_ID AND CLIA.LPN_ID = O.OLPN_ID LEFT JOIN default_pickpack.PPK_OLPN_STATUS STAT ON STAT.OLPN_STATUS_ID = O.STATUS WHERE CLIA.ORG_ID = $orgId AND O.STATUS = ''8000'';"
+}
+
+
+
+
+
+ 

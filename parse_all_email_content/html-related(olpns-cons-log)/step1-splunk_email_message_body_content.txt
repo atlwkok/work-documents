@@ -1,0 +1,33 @@
+//Named queries (enabled (SAA, POR) as of writing)
+// Correct ’ in email payload body and replace it with ''
+// ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+
+// (SAA, POR)
+The alert condition for '$name$' was triggered.
+Manhattan Case 8435111 is open for this.
+
+***MSP TO CLEAN UP***
+
+Steps to Clear:
+
+Delete the consolidation location assignments using the following endpoint.
+
+
+DELETE {{app_host}}/dcconsolidation/api/stagingLocationAssignment/locationCapacityTracking/{{PK}}
+
+
+
+
+//Disabled queries
+The alert condition for '$name$' was triggered.
+Manhattan Case 8435111 is open for this.
+
+***MSP TO CLEAN UP***
+
+Steps to Clear:
+
+Delete the consolidation location assignments using the following endpoint.
+
+
+DELETE {{app_host}}/dcconsolidation/api/stagingLocationAssignment/locationCapacityTracking/{{PK}}

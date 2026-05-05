@@ -1,4 +1,6 @@
- 
+select *
+from app.warehouselocationdetail
+where description like '%static-route-missing%';
 
 -- do $$
 -- BEGIN
@@ -6,14 +8,14 @@
 -- 	END IF;
 
 -- insert enabled alerts without payload
---  db-alert-matm-spo-import.
+--  db-alert-static-route-missing-threshold.
 
 
 insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
     select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
         from app.warehouselocation w, app.requesttype rt 
         where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
-        and rt.description = 'db-alert-matm-spo-import' 
+        and rt.description = 'db-alert-static-route-missing-threshold' 
         and not exists (select 1 from app.warehouselocationdetail r 
                             where r.requesttypeid = rt.requesttypeid 
                             and r.warehouseid = w.warehouseid);
@@ -33,7 +35,7 @@ from app.warehouselocationdetail r, app.warehouselo
 
 select *
 	from app.warehouselocationdetail wld, app.warehouselocation wl
-	where wld.description like ('%db-alert-matm-spo-import')
+	where wld.description like ('%db-alert-static-route-missing-threshold')
 	AND wld.warehouseid = wl.warehouseid 
 	order by wl.warehouseshortname
 
@@ -44,9 +46,11 @@ select *
 
 -- insert payload for enabled alerts:
 
--- Named queries (enabled only (RNDC) as of writing)
+-- Named queries (enabled (only PEN, POR, SAA, WSD as of writing) + disabled)
+
+-- (ASH)
 update app.warehouselocationdetail set payload = '{
-    "alertName":"MATM - SPO Import Failure",
+    "alertName":"STATIC ROUTE MISSING THRESHOLD VALUE",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -54,23 +58,131 @@ update app.warehouselocationdetail set payload = '{
         "uri":"jdbc:{host}:{port}/information_schema"
     },
     "email":{
-        "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />This alert highlights PO import errors in TMS. POs will not tender to a carrier until the data condition mentioned in the alert is corrected and the PO successfully imports into TMS.</pre>",
+        "subject":"Splunk Alert: $alertName$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI</pre>",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"IBTransportation@rndc-usa.com, InventoryPlanners-SupplyChain@rndc-usa.com, newsupplier@rndc-usa.com",
-        "ccEmail":"TMSTeam@RNDC-USA.COM, Tonja.Speegle@RNDC-USA.COM, Brenda.Weeks@RNDC-USA.COM, Bobby.Grant@RNDC-USA.COM, WMSMSPSupport@rndc-usa.com, Helena.Yates@rndc-usa.com, pam.thomas@rndc-usa.com, wmsinternal@rndc-usa.com",
+        "toEmail":"Jonathan.Snell@RNDC-USA.COM, Preston.Mccauley@RNDC-USA.COM, Rob.Garcia@RNDC-USA.COM, Jordan.Stoll@rndc-usa.com, Richard.Gay@RNDC-USA.COM, Billy.Calloway@RNDC-USA.COM, Ryan.Black@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"WITH t AS (SELECT CFM.created_timestamp, Substring_index(CFM.payload ->> ''$.PurchaseRequestId'', ''_'', 1) AS ''MARKET'', Substring_index(CFM.payload ->> ''$.PurchaseRequestId'', ''_'', -1) AS ''PO_NUMBER'', CFM.payload ->> ''$.BillingMethodId'' AS ''BILLING_METHOD'', CFM.payload ->> ''$.Extended.Buyer'' AS ''BUYER'', CFM.payload ->> ''$.Extended.SupplierCode'' AS ''SUPPLIER_CODE'', CFM.payload ->> ''$.Extended.SupplierName'' AS ''SUPPLIER_NAME'', CFM.error_message AS ''ERROR_CODE'', CFM.exception_messages ->> ''$[0].Description'' AS ''DESCRIPTION'' FROM default_commonutil.CUT_FAILED_MESSAGE CFM WHERE org_id = ''RNDC'' AND queue_name = ''XNT_VEN_PurchaseRequest'' AND error_code = ''VCO::171'' AND created_timestamp >= Now() - interval 1 day) SELECT * FROM t WHERE t.billing_method = ''Collect'' ORDER BY market;"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='RNDC') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-matm-spo-import');
+    "sql":"SELECT Substr(profile_id, 1, 3) ''WHSE'', static_route_id, ext_threshold ''THRESHOLD_VALUE'' FROM default_routing.RTG_STATIC_ROUTE WHERE ext_threshold IS NULL AND profile_id = concat($orgId, ''_Org_Profile'');"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='ASH') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-static-route-missing-threshold');
+
+-- (POR)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"STATIC ROUTE MISSING THRESHOLD VALUE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $alertName$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT Substr(profile_id, 1, 3) ''WHSE'', static_route_id, ext_threshold ''THRESHOLD_VALUE'' FROM default_routing.RTG_STATIC_ROUTE WHERE ext_threshold IS NULL AND profile_id = concat($orgId, ''_Org_Profile'');"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='POR') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-static-route-missing-threshold');
+
+
+-- (SAA)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"STATIC ROUTE MISSING THRESHOLD VALUE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $alertName$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Travis.Eldridge@rndc-usa.com,joseph.duran@rndc-usa.com,travis.gusler@rndc-usa.com,christopher.gonzales@rndc-usa.com,Larry.Shelton@RNDC-USA.COM, Octavio.Chavez@RNDC-USA.COM, kameron.phipps@rndc-usa.com,",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT Substr(profile_id, 1, 3) ''WHSE'', static_route_id, ext_threshold ''THRESHOLD_VALUE'' FROM default_routing.RTG_STATIC_ROUTE WHERE ext_threshold IS NULL AND profile_id = concat($orgId, ''_Org_Profile'');"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='SAA') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-static-route-missing-threshold');
 
 
 
+-- (WSD)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"STATIC ROUTE MISSING THRESHOLD VALUE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $alertName$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***<br />Configure the necessary values in the Static Route UI</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"demetrius.dever@rndc-usa.com,Michael.Clark@RNDC-USA.com,clarence.hall@rndc-usa.com,brian.bowen@rndc-usa.com,barbara.jackson@rndc-usa.com,rodney.williams@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT Substr(profile_id, 1, 3) ''WHSE'', static_route_id, ext_threshold ''THRESHOLD_VALUE'' FROM default_routing.RTG_STATIC_ROUTE WHERE ext_threshold IS NULL AND profile_id = concat($orgId, ''_Org_Profile'');"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='WSD') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-static-route-missing-threshold');
+
+
+-- (PEN)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"STATIC ROUTE MISSING THRESHOLD VALUE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $alertName$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT Substr(profile_id, 1, 3) ''WHSE'', static_route_id, ext_threshold ''THRESHOLD_VALUE'' FROM default_routing.RTG_STATIC_ROUTE WHERE ext_threshold IS NULL AND profile_id = concat($orgId, ''_Org_Profile'');"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='PEN') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-static-route-missing-threshold');
 
 -- (Unnamed)
--- unused as only 1 query enabled for RNDC orgId at this time and nothing else.
- 
+update app.warehouselocationdetail set payload = '{
+    "alertName":"STATIC ROUTE MISSING THRESHOLD VALUE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $alertName$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT Substr(profile_id, 1, 3) ''WHSE'', static_route_id, ext_threshold ''THRESHOLD_VALUE'' FROM default_routing.RTG_STATIC_ROUTE WHERE ext_threshold IS NULL AND profile_id = concat($orgId, ''_Org_Profile'');"
+}' 
+where warehouseid in (select wl.warehouseid
+            from app.warehouselocation wl  
+            where wl.warehouseshortname not in  ('ASH', 'POR', 'SAA', 'WSD', 'PEN'))
+    and requesttypeid=(select rt.requesttypeid
+                from app.requesttype rt 
+                where rt.description='db-alert-static-route-missing-threshold');
 
 
 -- Check and ensure right payloads are inserted and not affecting other unrelated records
@@ -79,7 +191,7 @@ update app.warehouselocationdetail set payload = '{
 select wld.payload, wl.warehouseshortname, wld.description
 from app.warehouselocationdetail wld join app.warehouselocation wl
 on wld.warehouseid = wl.warehouseid 
-where description != 'db-alert-matm-spo-import'
+where description != 'db-alert-static-route-missing-threshold'
 and wld.payload is not null
 -- order by wld.payload
 
@@ -89,10 +201,18 @@ and wld.payload is not null
 select  wld.payload, wl.warehouseshortname, wld.description
 from app.warehouselocationdetail wld join app.warehouselocation wl
 on wld.warehouseid = wl.warehouseid 
-where description = 'db-alert-matm-spo-import'
+where description = 'db-alert-static-route-missing-threshold'
 and wld.payload is not null
 order by wld.lastupdatedon
 
+
+
+select  wld.payload, wl.warehouseshortname, wld.description
+from app.warehouselocationdetail wld join app.warehouselocation wl
+on wld.warehouseid = wl.warehouseid 
+where description = 'db-alert-static-route-missing-threshold'
+and wld.payload is not null
+order by wl.warehouseshortname
 
 
 -- Test to ensure payloads can successfully be converted to JSON
@@ -103,6 +223,6 @@ FROM (
         wd.*, 
         row_number() OVER () AS rn
     FROM app.warehouselocationdetail wd
-	where description = 'db-alert-matm-spo-import'
+	where description = 'db-alert-static-route-missing-threshold'
 ) t 
 where (payload::jsonb IS NOT NULL);
