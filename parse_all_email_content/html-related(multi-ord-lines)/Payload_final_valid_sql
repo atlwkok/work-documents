@@ -1,0 +1,62 @@
+--  Named queries (only (ALL) as of writing)
+--  Correct ’ in email payload body and replace it with ''
+-- ***Remember to escape double quotes is a json object is found within payload/sql query with double quotes surrounding keys!! (see script 57_Warehouse_Detail_DBalert_MissingItemLevelVerification.sql in wms-api)
+
+--Copy from payload column of splunk.request.types excel file and then updatedetaildbalert sheet
+--paste into word document and then re-paste here.
+--REMEMBER TO REMOVE ANY LINE BREAKS, AND VALIDATE FROMEAMAIL/TOEMAIL/CCEMAIL/ATTACHMENT VALUES 
+-- AND EXECUTE json conversion script for payload below for this db-alert to ensure it was inserted correctly!
+--SELECT *
+-- FROM (
+--     SELECT 
+--         wd.*, 
+--         row_number() OVER () AS rn
+--     FROM app.warehouselocationdetail wd
+-- ) t
+-- WHERE rn between 6 and 7
+-- AND (payload::jsonb IS NOT NULL);
+
+--  db-alert-multi-ord-lines.
+ 
+insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
+    select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
+        from app.warehouselocation w, app.requesttype rt 
+        where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
+        and rt.description = 'db-alert-multi-ord-lines' 
+        and not exists (select 1 from app.warehouselocationdetail r 
+                            where r.requesttypeid = rt.requesttypeid 
+                            and r.warehouseid = w.warehouseid);
+
+
+
+--  Named queries (only (ALL) as of writing)
+--   ALL
+update app.warehouselocationdetail set payload = '{
+    "alertName":"MAWM - Multiple Order Lines Per Original Order Line",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />Note: Manhattan Case 7639712 is opened for this.</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@rndc-usa.com",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"select distinct (org_id), order_id, case when order_planning_run_id is not null then order_planning_run_id else shorted_order_planning_run_id end as ''wave_nbr'', order_type, original_order_line_id, item_id, count(order_line_id) from ( select o.org_id, o.order_id, o.order_type, oli.original_order_line_id, oli.order_line_id, oli.item_id, oli.order_planning_run_id, oli.shorted_order_planning_run_id, oli.status, oli.shortage_line, oli.ext_original_order_line_quantity, oli.ext_allocation_strategy, oli.packed_quantity, o.updated_timestamp from default_dcorder.DCO_ORDER_LINE oli join default_dcorder.DCO_ORDER o on oli.original_order_id = o.order_id and o.org_id = oli.org_id where oli.pipeline_status > 1000 and oli.updated_timestamp >= now() - INTERVAL 12 HOUR ) a group by org_id, order_id, wave_nbr, order_type, original_order_line_id, item_id having count(order_line_id) > 1 order by org_id, order_id, original_order_line_id;"
+}' where requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-multi-ord-lines');
+
+
+
+
+
+
+-- (Unnamed)
+--  Disabled queries
+
+ 
