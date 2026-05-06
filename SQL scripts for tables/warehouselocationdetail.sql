@@ -8,14 +8,14 @@ where description like '%tmp-inv-no-resv%';
 -- 	END IF;
 
 -- insert enabled alerts without payload
---  db-alert-tmp-inv-no-resv.
+--  db-alert-inv-adj-miss-rc.
 
 
 insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
     select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
         from app.warehouselocation w, app.requesttype rt 
         where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
-        and rt.description = 'db-alert-tmp-inv-no-resv' 
+        and rt.description = 'db-alert-inv-adj-miss-rc' 
         and not exists (select 1 from app.warehouselocationdetail r 
                             where r.requesttypeid = rt.requesttypeid 
                             and r.warehouseid = w.warehouseid);
@@ -35,7 +35,7 @@ from app.warehouselocationdetail r, app.warehouselocation
 
 select *
 	from app.warehouselocationdetail wld, app.warehouselocation wl
-	where wld.description like ('%db-alert-tmp-inv-no-resv')
+	where wld.description like ('%db-alert-inv-adj-miss-rc')
 	AND wld.warehouseid = wl.warehouseid 
 	order by wl.warehouseshortname
 
@@ -47,10 +47,10 @@ select *
 -- insert payload for enabled alerts:
 
 
---  Named queries (enabled (ARK, ORL, PEN, POR, SAA, WSD) as of writing)
---   ARK
+-- Named queries (enabled (only ARK, ELP, JES, LIV, LOU, PEN, POR, ROM, SIO, TAM, as of writing) + disabled)
+-- (ARK)
 update app.warehouselocationdetail set payload = '{
-    "alertName":"Temporary Reserve Locations W/ Inventory, But No Assignments",
+    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -59,20 +59,23 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />Manhattan Case 8435111 is open for this.<br /><br />***MSP TO CLEAN UP***<br /><br />Steps to Clear:<br /><br />Delete the consolidation location assignments using the following endpoint.<br /><br /><br />DELETE {{app_host}}/dcconsolidation/api/stagingLocationAssignment/locationCapacityTracking/{{PK}}<br /><br /><br /><br /><br />***MSP TO CLEAN UP*** <br /><br />Description: <br />1. Location Inventory UI – Rebuild the location<br />2. Location Item Assignments UI – Delete the Location Item Assignment<br /><br />Note: Manhattan Case 7092460 is opened for this.</pre>",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
         "toEmail":"Kim.Crawford@rndc-usa.com, Joe.Thompson@rndc-usa.com, Joshua.Edens@rndc-usa.com",
-        "ccEmail":"WMSInternal@rndc-usa.com, WMSMSPSupport@rndc-usa.com, WMSConsultant@rndc-usa.com, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "ccEmail":"WMSInternal@rndc-usa.com, WMSMSPSupport@rndc-usa.com, WMSConsultant@rndc-usa.com",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT ASSIGN.ORG_ID, ASSIGN.LOCATION_ID, ASSIGN.ITEM_ID, ASSIGN.ASSIGNMENT_ID FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT ASSIGN LEFT JOIN default_dcinventory.DCI_LOCATION LOC ON LOC.LOCATION_ID = ASSIGN.LOCATION_ID AND SUBSTR(LOC.PROFILE_ID,1,3) = ASSIGN.ORG_ID WHERE ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN1.LOCATION_ID FROM default_dcinventory.DCI_INVENTORY INVN1 WHERE INVN1.LOCATION_ID IS NOT NULL ) AND ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN2.INVENTORY_CONTAINER_ID FROM default_dcinventory.DCI_INVENTORY INVN2 WHERE INVN2.INVENTORY_CONTAINER_TYPE_ID = ''LOCATION'' ) AND LOC.STORAGE_UOM_ID = ''LPN'' AND LOC.SKU_DEDICATION_TYPE_ID = ''TEMPORARY'' AND LOC.LOCATION_TYPE_ID = ''STORAGE'' AND ASSIGN.ORG_ID = $orgId"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='ARK') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-tmp-inv-no-resv');
-
-
---   ORL
+    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='ARK') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-inv-adj-miss-rc');
+-- (ELP)
 update app.warehouselocationdetail set payload = '{
-    "alertName":"Temporary Reserve Locations W/ Inventory, But No Assignments",
+    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -81,20 +84,74 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />Manhattan Case 8435111 is open for this.<br /><br />***MSP TO CLEAN UP***<br /><br />Steps to Clear:<br /><br />Delete the consolidation location assignments using the following endpoint.<br /><br /><br />DELETE {{app_host}}/dcconsolidation/api/stagingLocationAssignment/locationCapacityTracking/{{PK}}<br /><br /><br /><br /><br />***MSP TO CLEAN UP*** <br /><br />Description: <br />1. Location Inventory UI – Rebuild the location<br />2. Location Item Assignments UI – Delete the Location Item Assignment<br /><br />Note: Manhattan Case 7092460 is opened for this.</pre>",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"Garry.Martinez@rndc-usa.com, Kenny.Keenan@rndc-usa.com, STEPHEN.KING@RNDC-USA.COM",
+        "toEmail":"keith.thompson@rndc-usa.com ,frank.ceja@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='ELP') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-inv-adj-miss-rc');
+-- (JES)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Richard.Chamberlain2@RNDC-USA.COM, Keith.McKinzie@RNDC-USA.COM, Tony.Derin@RNDC-USA.COM, Zeke.Mercer@RNDC-USA.COM, Constant.Kellam@RNDC-USA.COM,Jose.Moreno@RNDC-USA.COM, James.Stone@rndc-usa.com, Michael.Clark@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='JES') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-inv-adj-miss-rc');
+
+-- (LIV)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"todd.dively2@rndc-usa.com;john.blarek@rndc-usa.com;chris.capotosto@rndc-usa.com",
         "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT ASSIGN.ORG_ID, ASSIGN.LOCATION_ID, ASSIGN.ITEM_ID, ASSIGN.ASSIGNMENT_ID FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT ASSIGN LEFT JOIN default_dcinventory.DCI_LOCATION LOC ON LOC.LOCATION_ID = ASSIGN.LOCATION_ID AND SUBSTR(LOC.PROFILE_ID,1,3) = ASSIGN.ORG_ID WHERE ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN1.LOCATION_ID FROM default_dcinventory.DCI_INVENTORY INVN1 WHERE INVN1.LOCATION_ID IS NOT NULL ) AND ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN2.INVENTORY_CONTAINER_ID FROM default_dcinventory.DCI_INVENTORY INVN2 WHERE INVN2.INVENTORY_CONTAINER_TYPE_ID = ''LOCATION'' ) AND LOC.STORAGE_UOM_ID = ''LPN'' AND LOC.SKU_DEDICATION_TYPE_ID = ''TEMPORARY'' AND LOC.LOCATION_TYPE_ID = ''STORAGE'' AND ASSIGN.ORG_ID = $orgId"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='ORL') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-tmp-inv-no-resv');
-
-
---   PEN
+    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='LIV') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-inv-adj-miss-rc');
+-- (LOU)
 update app.warehouselocationdetail set payload = '{
-    "alertName":"Temporary Reserve Locations W/ Inventory, But No Assignments",
+    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -103,20 +160,48 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />Manhattan Case 8435111 is open for this.<br /><br />***MSP TO CLEAN UP***<br /><br />Steps to Clear:<br /><br />Delete the consolidation location assignments using the following endpoint.<br /><br /><br />DELETE {{app_host}}/dcconsolidation/api/stagingLocationAssignment/locationCapacityTracking/{{PK}}<br /><br /><br /><br /><br />***MSP TO CLEAN UP*** <br /><br />Description: <br />1. Location Inventory UI – Rebuild the location<br />2. Location Item Assignments UI – Delete the Location Item Assignment<br /><br />Note: Manhattan Case 7092460 is opened for this.</pre>",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"frankie.troncosa@rndc-usa.com,erik.thoreson@rndc-usa.com,chadd.vankampen@rndc-usa.com, michael.gallagher@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='LOU') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-inv-adj-miss-rc');
+-- (PEN)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
         "toEmail":"Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com",
-        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT ASSIGN.ORG_ID, ASSIGN.LOCATION_ID, ASSIGN.ITEM_ID, ASSIGN.ASSIGNMENT_ID FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT ASSIGN LEFT JOIN default_dcinventory.DCI_LOCATION LOC ON LOC.LOCATION_ID = ASSIGN.LOCATION_ID AND SUBSTR(LOC.PROFILE_ID,1,3) = ASSIGN.ORG_ID WHERE ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN1.LOCATION_ID FROM default_dcinventory.DCI_INVENTORY INVN1 WHERE INVN1.LOCATION_ID IS NOT NULL ) AND ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN2.INVENTORY_CONTAINER_ID FROM default_dcinventory.DCI_INVENTORY INVN2 WHERE INVN2.INVENTORY_CONTAINER_TYPE_ID = ''LOCATION'' ) AND LOC.STORAGE_UOM_ID = ''LPN'' AND LOC.SKU_DEDICATION_TYPE_ID = ''TEMPORARY'' AND LOC.LOCATION_TYPE_ID = ''STORAGE'' AND ASSIGN.ORG_ID = $orgId"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='PEN') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-tmp-inv-no-resv');
-
-
---   POR
+    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='PEN') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-inv-adj-miss-rc');
+-- (POR)
 update app.warehouselocationdetail set payload = '{
-    "alertName":"Temporary Reserve Locations W/ Inventory, But No Assignments",
+    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -125,93 +210,125 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />Manhattan Case 8435111 is open for this.<br /><br />***MSP TO CLEAN UP***<br /><br />Steps to Clear:<br /><br />Delete the consolidation location assignments using the following endpoint.<br /><br /><br />DELETE {{app_host}}/dcconsolidation/api/stagingLocationAssignment/locationCapacityTracking/{{PK}}<br /><br /><br /><br /><br />***MSP TO CLEAN UP*** <br /><br />Description: <br />1. Location Inventory UI – Rebuild the location<br />2. Location Item Assignments UI – Delete the Location Item Assignment<br /><br />Note: Manhattan Case 7092460 is opened for this.</pre>",
-        "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"bryce.meyer@rndc-usa.com, Michael.Ferdinand@Penske.com, abel.paucardelacruz@rndc-usa.com, Matthew.Chavez@Penske.com,Jesse.Butler@Penske.com",
-        "ccEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM",
-        "footer":"",
-        "attachment":["link-to-alert","link-to-results", "inline-table"]
-    },
-    "sql":"SELECT ASSIGN.ORG_ID, ASSIGN.LOCATION_ID, ASSIGN.ITEM_ID, ASSIGN.ASSIGNMENT_ID FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT ASSIGN LEFT JOIN default_dcinventory.DCI_LOCATION LOC ON LOC.LOCATION_ID = ASSIGN.LOCATION_ID AND SUBSTR(LOC.PROFILE_ID,1,3) = ASSIGN.ORG_ID WHERE ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN1.LOCATION_ID FROM default_dcinventory.DCI_INVENTORY INVN1 WHERE INVN1.LOCATION_ID IS NOT NULL ) AND ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN2.INVENTORY_CONTAINER_ID FROM default_dcinventory.DCI_INVENTORY INVN2 WHERE INVN2.INVENTORY_CONTAINER_TYPE_ID = ''LOCATION'' ) AND LOC.STORAGE_UOM_ID = ''LPN'' AND LOC.SKU_DEDICATION_TYPE_ID = ''TEMPORARY'' AND LOC.LOCATION_TYPE_ID = ''STORAGE'' AND ASSIGN.ORG_ID = $orgId"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='POR') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-tmp-inv-no-resv');
-
-
---   SAA
-update app.warehouselocationdetail set payload = '{
-    "alertName":"Temporary Reserve Locations W/ Inventory, But No Assignments",
-    "dataSource":"MAWM",
-    "database":{
-        "connection":"MAPRD_NEW",
-        "type":"MySQL",
-        "uri":"jdbc:{host}:{port}/information_schema"
-    },
-    "email":{
-        "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />Manhattan Case 8435111 is open for this.<br /><br />***MSP TO CLEAN UP***<br /><br />Steps to Clear:<br /><br />Delete the consolidation location assignments using the following endpoint.<br /><br /><br />DELETE {{app_host}}/dcconsolidation/api/stagingLocationAssignment/locationCapacityTracking/{{PK}}<br /><br /><br /><br /><br />***MSP TO CLEAN UP*** <br /><br />Description: <br />1. Location Inventory UI – Rebuild the location<br />2. Location Item Assignments UI – Delete the Location Item Assignment<br /><br />Note: Manhattan Case 7092460 is opened for this.</pre>",
-        "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"Travis.Eldridge@rndc-usa.com,Alex.Rios@rndc-usa.com,Larry.Shelton@RNDC-USA.COM,Octavio.Chavez@RNDC-USA.COM,ameron.phipps@rndc-usa.com,andre.dockery@rndc-usa.com,amanda.santos@rndc-usa.com, Armando.Granados@RNDC-USA.COM",
-        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
-        "footer":"",
-        "attachment":["link-to-alert","link-to-results", "inline-table"]
-    },
-    "sql":"SELECT ASSIGN.ORG_ID, ASSIGN.LOCATION_ID, ASSIGN.ITEM_ID, ASSIGN.ASSIGNMENT_ID FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT ASSIGN LEFT JOIN default_dcinventory.DCI_LOCATION LOC ON LOC.LOCATION_ID = ASSIGN.LOCATION_ID AND SUBSTR(LOC.PROFILE_ID,1,3) = ASSIGN.ORG_ID WHERE ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN1.LOCATION_ID FROM default_dcinventory.DCI_INVENTORY INVN1 WHERE INVN1.LOCATION_ID IS NOT NULL ) AND ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN2.INVENTORY_CONTAINER_ID FROM default_dcinventory.DCI_INVENTORY INVN2 WHERE INVN2.INVENTORY_CONTAINER_TYPE_ID = ''LOCATION'' ) AND LOC.STORAGE_UOM_ID = ''LPN'' AND LOC.SKU_DEDICATION_TYPE_ID = ''TEMPORARY'' AND LOC.LOCATION_TYPE_ID = ''STORAGE'' AND ASSIGN.ORG_ID = $orgId"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='SAA') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-tmp-inv-no-resv');
-
-
---   WSD
-update app.warehouselocationdetail set payload = '{
-    "alertName":"Temporary Reserve Locations W/ Inventory, But No Assignments",
-    "dataSource":"MAWM",
-    "database":{
-        "connection":"MAPRD_NEW",
-        "type":"MySQL",
-        "uri":"jdbc:{host}:{port}/information_schema"
-    },
-    "email":{
-        "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />Manhattan Case 8435111 is open for this.<br /><br />***MSP TO CLEAN UP***<br /><br />Steps to Clear:<br /><br />Delete the consolidation location assignments using the following endpoint.<br /><br /><br />DELETE {{app_host}}/dcconsolidation/api/stagingLocationAssignment/locationCapacityTracking/{{PK}}<br /><br /><br /><br /><br />***MSP TO CLEAN UP*** <br /><br />Description: <br />1. Location Inventory UI – Rebuild the location<br />2. Location Item Assignments UI – Delete the Location Item Assignment<br /><br />Note: Manhattan Case 7092460 is opened for this.</pre>",
-        "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"demetrius.dever@rndc-usa.com, Michael.Clark@RNDC-USA.com, guy.sriwatcharakul@rndc-usa.com, hank.dryden@rndc-usa.com",
-        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
-        "footer":"",
-        "attachment":["link-to-alert","link-to-results", "inline-table"]
-    },
-    "sql":"SELECT ASSIGN.ORG_ID, ASSIGN.LOCATION_ID, ASSIGN.ITEM_ID, ASSIGN.ASSIGNMENT_ID FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT ASSIGN LEFT JOIN default_dcinventory.DCI_LOCATION LOC ON LOC.LOCATION_ID = ASSIGN.LOCATION_ID AND SUBSTR(LOC.PROFILE_ID,1,3) = ASSIGN.ORG_ID WHERE ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN1.LOCATION_ID FROM default_dcinventory.DCI_INVENTORY INVN1 WHERE INVN1.LOCATION_ID IS NOT NULL ) AND ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN2.INVENTORY_CONTAINER_ID FROM default_dcinventory.DCI_INVENTORY INVN2 WHERE INVN2.INVENTORY_CONTAINER_TYPE_ID = ''LOCATION'' ) AND LOC.STORAGE_UOM_ID = ''LPN'' AND LOC.SKU_DEDICATION_TYPE_ID = ''TEMPORARY'' AND LOC.LOCATION_TYPE_ID = ''STORAGE'' AND ASSIGN.ORG_ID = $orgId"
-}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='WSD') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-tmp-inv-no-resv');
-
-
-
-
-
-
-
--- (Unnamed)
---  Disabled queries
-update app.warehouselocationdetail set payload = '{
-    "alertName":"Temporary Reserve Locations W/ Inventory, But No Assignments",
-    "dataSource":"MAWM",
-    "database":{
-        "connection":"MAPRD_NEW",
-        "type":"MySQL",
-        "uri":"jdbc:{host}:{port}/information_schema"
-    },
-    "email":{
-        "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />Manhattan Case 8435111 is open for this.<br /><br />***MSP TO CLEAN UP***<br /><br />Steps to Clear:<br /><br />Delete the consolidation location assignments using the following endpoint.<br /><br /><br />DELETE {{app_host}}/dcconsolidation/api/stagingLocationAssignment/locationCapacityTracking/{{PK}}<br /><br /><br /><br /><br />***MSP TO CLEAN UP*** <br /><br />Description: <br />1. Location Inventory UI – Rebuild the location<br />2. Location Item Assignments UI – Delete the Location Item Assignment<br /><br />Note: Manhattan Case 7092460 is opened for this.</pre>",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
         "toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
         "ccEmail":"",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT ASSIGN.ORG_ID, ASSIGN.LOCATION_ID, ASSIGN.ITEM_ID, ASSIGN.ASSIGNMENT_ID FROM default_dcinventory.DCI_LOCATION_ITEM_ASSIGNMENT ASSIGN LEFT JOIN default_dcinventory.DCI_LOCATION LOC ON LOC.LOCATION_ID = ASSIGN.LOCATION_ID AND SUBSTR(LOC.PROFILE_ID,1,3) = ASSIGN.ORG_ID WHERE ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN1.LOCATION_ID FROM default_dcinventory.DCI_INVENTORY INVN1 WHERE INVN1.LOCATION_ID IS NOT NULL ) AND ASSIGN.LOCATION_ID NOT IN ( SELECT DISTINCT INVN2.INVENTORY_CONTAINER_ID FROM default_dcinventory.DCI_INVENTORY INVN2 WHERE INVN2.INVENTORY_CONTAINER_TYPE_ID = ''LOCATION'' ) AND LOC.STORAGE_UOM_ID = ''LPN'' AND LOC.SKU_DEDICATION_TYPE_ID = ''TEMPORARY'' AND LOC.LOCATION_TYPE_ID = ''STORAGE'' AND ASSIGN.ORG_ID = $orgId"
+    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='POR') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-inv-adj-miss-rc');
+-- (ROM)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Augustus.Narro@RNDC-USA.com, Christopher.Swidergal@RNDC-USA.com, Donald.Boeger@RNDC-USA.com, David.Cedeno@RNDC-USA.com, Carl.Wofford@RNDC-USA.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='ROM') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-inv-adj-miss-rc');
+-- (SIO)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"Roxanne.Bernal@RNDC-USA.COM;John.Hay@RNDC-USA.COM",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
+}' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='SIO') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-inv-adj-miss-rc');
+-- (TAM)
+ update app.warehouselocationdetail set payload = '{
+    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"stephen.king@rndc-usa.com,doug.lepkowski@rndc-usa.com, Eduardo.Gutierrez@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com,WMSMSPSupport@rndc-usa.com",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
+}
+' where warehouseid = (select w.warehouseid 
+                        from app.warehouselocation w 
+                        where w.warehouseshortname='TAM') 
+    and requesttypeid=(select rt.requesttypeid 
+                        from app.requesttype rt 
+                        where rt.description='db-alert-inv-adj-miss-rc');
+
+
+-- (Unnamed)
+update app.warehouselocationdetail set payload = '{
+    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
 }' 
 where warehouseid in (select wl.warehouseid
             from app.warehouselocation wl  
-            where wl.warehouseshortname not in  ('ARK', 'ORL', 'PEN', 'POR', 'SAA', 'WSD'))
+            where wl.warehouseshortname not in  ('ARK', 'ELP', 'JES', 'LIV', 'LOU', 'PEN', 'POR', 'ROM', 'SIO', 'TAM'))
     and requesttypeid=(select rt.requesttypeid
                 from app.requesttype rt 
-                where rt.description='db-alert-tmp-inv-no-resv');
+                where rt.description='db-alert-inv-adj-miss-rc');
+
 
 
 
@@ -223,17 +340,17 @@ where warehouseid in (select wl.warehouseid
 select wld.payload, wl.warehouseshortname, wld.description
 from app.warehouselocationdetail wld join app.warehouselocation wl
 on wld.warehouseid = wl.warehouseid 
-where description != 'db-alert-tmp-inv-no-resv'
+where description != 'db-alert-inv-adj-miss-rc'
 and wld.payload is not null
 -- order by wld.payload
 
 
 
 
-select  wld.payload, wl.warehouseshortname, wld.description
+select  wld.payload, wl.warehouseshortname, wld.description, wld.lastupdatedon
 from app.warehouselocationdetail wld join app.warehouselocation wl
 on wld.warehouseid = wl.warehouseid 
-where description = 'db-alert-tmp-inv-no-resv'
+where description = 'db-alert-inv-adj-miss-rc'
 and wld.payload is not null
 order by wld.lastupdatedon
 
@@ -242,7 +359,7 @@ order by wld.lastupdatedon
 select  wld.payload, wl.warehouseshortname, wld.description
 from app.warehouselocationdetail wld join app.warehouselocation wl
 on wld.warehouseid = wl.warehouseid 
-where description = 'db-alert-tmp-inv-no-resv'
+where description = 'db-alert-inv-adj-miss-rc'
 and wld.payload is not null
 order by wl.warehouseshortname
 
@@ -255,6 +372,6 @@ FROM (
         wd.*, 
         row_number() OVER () AS rn
     FROM app.warehouselocationdetail wd
-	where description = 'db-alert-tmp-inv-no-resv'
+	where description = 'db-alert-inv-adj-miss-rc'
 ) t 
 where (payload::jsonb IS NOT NULL);
