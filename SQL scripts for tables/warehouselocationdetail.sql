@@ -8,14 +8,14 @@ where description like '%tmp-inv-no-resv%';
 -- 	END IF;
 
 -- insert enabled alerts without payload
---  db-alert-inv-adj-miss-rc.
+--  db-alert-open-order-1w.
 
 
 insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
     select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
         from app.warehouselocation w, app.requesttype rt 
         where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
-        and rt.description = 'db-alert-inv-adj-miss-rc' 
+        and rt.description = 'db-alert-open-order-1w' 
         and not exists (select 1 from app.warehouselocationdetail r 
                             where r.requesttypeid = rt.requesttypeid 
                             and r.warehouseid = w.warehouseid);
@@ -35,7 +35,7 @@ from app.warehouselocationdetail r, app.warehouselocation
 
 select *
 	from app.warehouselocationdetail wld, app.warehouselocation wl
-	where wld.description like ('%db-alert-inv-adj-miss-rc')
+	where wld.description like ('%db-alert-open-order-1w')
 	AND wld.warehouseid = wl.warehouseid 
 	order by wl.warehouseshortname
 
@@ -47,10 +47,10 @@ select *
 -- insert payload for enabled alerts:
 
 
--- Named queries (enabled (only ARK, ELP, JES, LIV, LOU, PEN, POR, ROM, SIO, TAM, as of writing) + disabled)
--- (ARK)
+--  Named queries (enabled (ABQ, ARK, AUB, PEN, POR, ROM, WSD) as of writing)
+--   ABQ
 update app.warehouselocationdetail set payload = '{
-    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "alertName":"Open Order In Wm > 1 Week",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -59,74 +59,44 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "body":"",
+        "fromEmail":"wms-tools-noreply@rndc-usa.com",
+        "toEmail":"wmsinternal@rndc-usa.com, wmsmspsupport@rndc-usa.com, Ryan.McHenry@rndc-usa.com, FRANCO.FLORES@RNDC-USA.COM",
+        "ccEmail":"",
+        "footer":"",
+        "attachment":["link-to-alert","link-to-results", "inline-table"]
+    },
+    "sql":"SELECT O.ORG_ID, O.ORIGINAL_ORDER_ID, O.CREATED_TIMESTAMP, O.ORDER_TYPE, CASE WHEN UPPER(ORDER_TYPE) = ''STANDARD'' THEN O.EXT_ROUTE_ID else NULL END AS ''ROUTE'', CONCAT(O.MAXIMUM_STATUS,''-'',DS.DESCRIPTION) ''MAX_STATUS'' from default_dcorder.DCO_ORIGINAL_ORDER O JOIN default_dcorder.DCO_ORDER_STATUS DS ON DS.ORDER_STATUS_ID = O.MAXIMUM_STATUS JOIN default_dcorder.DCO_ORDER_STATUS DS2 ON DS2.ORDER_STATUS_ID = O.MINIMUM_STATUS WHERE 1=1 AND O.MAXIMUM_STATUS < 8000 AND O.CREATED_TIMESTAMP < NOW() - INTERVAL 7 DAY AND O.ORG_ID = $orgId;"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='ABQ') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-open-order-1w');
+
+
+--   ARK
+update app.warehouselocationdetail set payload = '{
+    "alertName":"Open Order In Wm > 1 Week",
+    "dataSource":"MAWM",
+    "database":{
+        "connection":"MAPRD_NEW",
+        "type":"MySQL",
+        "uri":"jdbc:{host}:{port}/information_schema"
+    },
+    "email":{
+        "subject":"Splunk Alert: $name$",
+        "body":"",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
         "toEmail":"Kim.Crawford@rndc-usa.com, Joe.Thompson@rndc-usa.com, Joshua.Edens@rndc-usa.com",
         "ccEmail":"WMSInternal@rndc-usa.com, WMSMSPSupport@rndc-usa.com, WMSConsultant@rndc-usa.com",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
-}' where warehouseid = (select w.warehouseid 
-                        from app.warehouselocation w 
-                        where w.warehouseshortname='ARK') 
-    and requesttypeid=(select rt.requesttypeid 
-                        from app.requesttype rt 
-                        where rt.description='db-alert-inv-adj-miss-rc');
--- (ELP)
-update app.warehouselocationdetail set payload = '{
-    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
-    "dataSource":"MAWM",
-    "database":{
-        "connection":"MAPRD_NEW",
-        "type":"MySQL",
-        "uri":"jdbc:{host}:{port}/information_schema"
-    },
-    "email":{
-        "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
-        "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"keith.thompson@rndc-usa.com ,frank.ceja@rndc-usa.com",
-        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
-        "footer":"",
-        "attachment":["link-to-alert","link-to-results", "inline-table"]
-    },
-    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
-}' where warehouseid = (select w.warehouseid 
-                        from app.warehouselocation w 
-                        where w.warehouseshortname='ELP') 
-    and requesttypeid=(select rt.requesttypeid 
-                        from app.requesttype rt 
-                        where rt.description='db-alert-inv-adj-miss-rc');
--- (JES)
-update app.warehouselocationdetail set payload = '{
-    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
-    "dataSource":"MAWM",
-    "database":{
-        "connection":"MAPRD_NEW",
-        "type":"MySQL",
-        "uri":"jdbc:{host}:{port}/information_schema"
-    },
-    "email":{
-        "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
-        "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"Richard.Chamberlain2@RNDC-USA.COM, Keith.McKinzie@RNDC-USA.COM, Tony.Derin@RNDC-USA.COM, Zeke.Mercer@RNDC-USA.COM, Constant.Kellam@RNDC-USA.COM,Jose.Moreno@RNDC-USA.COM, James.Stone@rndc-usa.com, Michael.Clark@rndc-usa.com",
-        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
-        "footer":"",
-        "attachment":["link-to-alert","link-to-results", "inline-table"]
-    },
-    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
-}' where warehouseid = (select w.warehouseid 
-                        from app.warehouselocation w 
-                        where w.warehouseshortname='JES') 
-    and requesttypeid=(select rt.requesttypeid 
-                        from app.requesttype rt 
-                        where rt.description='db-alert-inv-adj-miss-rc');
+    "sql":"SELECT O.ORG_ID, O.ORIGINAL_ORDER_ID, O.CREATED_TIMESTAMP, O.ORDER_TYPE, CASE WHEN UPPER(ORDER_TYPE) = ''STANDARD'' THEN O.EXT_ROUTE_ID else NULL END AS ''ROUTE'', CONCAT(O.MAXIMUM_STATUS,''-'',DS.DESCRIPTION) ''MAX_STATUS'' from default_dcorder.DCO_ORIGINAL_ORDER O JOIN default_dcorder.DCO_ORDER_STATUS DS ON DS.ORDER_STATUS_ID = O.MAXIMUM_STATUS JOIN default_dcorder.DCO_ORDER_STATUS DS2 ON DS2.ORDER_STATUS_ID = O.MINIMUM_STATUS WHERE 1=1 AND O.MAXIMUM_STATUS < 8000 AND O.CREATED_TIMESTAMP < NOW() - INTERVAL 7 DAY AND O.ORG_ID = $orgId;"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='ARK') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-open-order-1w');
 
--- (LIV)
+
+
+
+--   AUB
 update app.warehouselocationdetail set payload = '{
-    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "alertName":"Open Order In Wm > 1 Week",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -135,23 +105,20 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "body":"",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"todd.dively2@rndc-usa.com;john.blarek@rndc-usa.com;chris.capotosto@rndc-usa.com",
-        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "toEmail":"AUB-Automation-Support@RNDC-USA.COM",
+        "ccEmail":"",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
-}' where warehouseid = (select w.warehouseid 
-                        from app.warehouselocation w 
-                        where w.warehouseshortname='LIV') 
-    and requesttypeid=(select rt.requesttypeid 
-                        from app.requesttype rt 
-                        where rt.description='db-alert-inv-adj-miss-rc');
--- (LOU)
+    "sql":"SELECT O.ORG_ID, O.ORIGINAL_ORDER_ID, O.CREATED_TIMESTAMP, O.ORDER_TYPE, CASE WHEN UPPER(ORDER_TYPE) = ''STANDARD'' THEN O.EXT_ROUTE_ID else NULL END AS ''ROUTE'', CONCAT(O.MAXIMUM_STATUS,''-'',DS.DESCRIPTION) ''MAX_STATUS'' from default_dcorder.DCO_ORIGINAL_ORDER O JOIN default_dcorder.DCO_ORDER_STATUS DS ON DS.ORDER_STATUS_ID = O.MAXIMUM_STATUS JOIN default_dcorder.DCO_ORDER_STATUS DS2 ON DS2.ORDER_STATUS_ID = O.MINIMUM_STATUS WHERE 1=1 AND O.MAXIMUM_STATUS < 8000 AND O.CREATED_TIMESTAMP < NOW() - INTERVAL 7 DAY AND O.ORG_ID = $orgId;"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='AUB') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-open-order-1w');
+
+
+--   PEN
 update app.warehouselocationdetail set payload = '{
-    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "alertName":"Open Order In Wm > 1 Week",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -160,48 +127,23 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
-        "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"frankie.troncosa@rndc-usa.com,erik.thoreson@rndc-usa.com,chadd.vankampen@rndc-usa.com, michael.gallagher@rndc-usa.com",
-        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
-        "footer":"",
-        "attachment":["link-to-alert","link-to-results", "inline-table"]
-    },
-    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
-}' where warehouseid = (select w.warehouseid 
-                        from app.warehouselocation w 
-                        where w.warehouseshortname='LOU') 
-    and requesttypeid=(select rt.requesttypeid 
-                        from app.requesttype rt 
-                        where rt.description='db-alert-inv-adj-miss-rc');
--- (PEN)
-update app.warehouselocationdetail set payload = '{
-    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
-    "dataSource":"MAWM",
-    "database":{
-        "connection":"MAPRD_NEW",
-        "type":"MySQL",
-        "uri":"jdbc:{host}:{port}/information_schema"
-    },
-    "email":{
-        "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "body":"",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
         "toEmail":"Ryan.Metz@rndc-usa.com, John.Hall@rndc-usa.com, Anthony.Coleman@rndc-usa.com, Dazzle.Keyser@rndc-usa.com, Douglas.Garner@rndc-usa.com",
         "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
-}' where warehouseid = (select w.warehouseid 
-                        from app.warehouselocation w 
-                        where w.warehouseshortname='PEN') 
-    and requesttypeid=(select rt.requesttypeid 
-                        from app.requesttype rt 
-                        where rt.description='db-alert-inv-adj-miss-rc');
--- (POR)
+    "sql":"SELECT O.ORG_ID, O.ORIGINAL_ORDER_ID, O.CREATED_TIMESTAMP, O.ORDER_TYPE, CASE WHEN UPPER(ORDER_TYPE) = ''STANDARD'' THEN O.EXT_ROUTE_ID else NULL END AS ''ROUTE'', CONCAT(O.MAXIMUM_STATUS,''-'',DS.DESCRIPTION) ''MAX_STATUS'' from default_dcorder.DCO_ORIGINAL_ORDER O JOIN default_dcorder.DCO_ORDER_STATUS DS ON DS.ORDER_STATUS_ID = O.MAXIMUM_STATUS JOIN default_dcorder.DCO_ORDER_STATUS DS2 ON DS2.ORDER_STATUS_ID = O.MINIMUM_STATUS WHERE 1=1 AND O.MAXIMUM_STATUS < 8000 AND O.CREATED_TIMESTAMP < NOW() - INTERVAL 7 DAY AND O.ORG_ID = $orgId;"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='PEN') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-open-order-1w');
+
+
+
+
+
+--   POR
 update app.warehouselocationdetail set payload = '{
-    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "alertName":"Open Order In Wm > 1 Week",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -210,23 +152,21 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "body":"",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "toEmail":"bryce.meyer@rndc-usa.com, Michael.Ferdinand@Penske.com, abel.paucardelacruz@rndc-usa.com, Sara.Farrington@Penske.com, Matthew.Chavez@Penske.com,Jesse.Butler@Penske.com, Brian.Bontemps@penske.com",
         "ccEmail":"",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
-}' where warehouseid = (select w.warehouseid 
-                        from app.warehouselocation w 
-                        where w.warehouseshortname='POR') 
-    and requesttypeid=(select rt.requesttypeid 
-                        from app.requesttype rt 
-                        where rt.description='db-alert-inv-adj-miss-rc');
--- (ROM)
+    "sql":"SELECT O.ORG_ID, O.ORIGINAL_ORDER_ID, O.CREATED_TIMESTAMP, O.ORDER_TYPE, CASE WHEN UPPER(ORDER_TYPE) = ''STANDARD'' THEN O.EXT_ROUTE_ID else NULL END AS ''ROUTE'', CONCAT(O.MAXIMUM_STATUS,''-'',DS.DESCRIPTION) ''MAX_STATUS'' from default_dcorder.DCO_ORIGINAL_ORDER O JOIN default_dcorder.DCO_ORDER_STATUS DS ON DS.ORDER_STATUS_ID = O.MAXIMUM_STATUS JOIN default_dcorder.DCO_ORDER_STATUS DS2 ON DS2.ORDER_STATUS_ID = O.MINIMUM_STATUS WHERE 1=1 AND O.MAXIMUM_STATUS < 8000 AND O.CREATED_TIMESTAMP < NOW() - INTERVAL 7 DAY AND O.ORG_ID = $orgId;"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='POR') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-open-order-1w');
+
+
+
+--   ROM
 update app.warehouselocationdetail set payload = '{
-    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "alertName":"Open Order In Wm > 1 Week",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -235,23 +175,20 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "body":"",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
         "toEmail":"Augustus.Narro@RNDC-USA.com, Christopher.Swidergal@RNDC-USA.com, Donald.Boeger@RNDC-USA.com, David.Cedeno@RNDC-USA.com, Carl.Wofford@RNDC-USA.com",
         "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
-}' where warehouseid = (select w.warehouseid 
-                        from app.warehouselocation w 
-                        where w.warehouseshortname='ROM') 
-    and requesttypeid=(select rt.requesttypeid 
-                        from app.requesttype rt 
-                        where rt.description='db-alert-inv-adj-miss-rc');
--- (SIO)
+    "sql":"SELECT O.ORG_ID, O.ORIGINAL_ORDER_ID, O.CREATED_TIMESTAMP, O.ORDER_TYPE, CASE WHEN UPPER(ORDER_TYPE) = ''STANDARD'' THEN O.EXT_ROUTE_ID else NULL END AS ''ROUTE'', CONCAT(O.MAXIMUM_STATUS,''-'',DS.DESCRIPTION) ''MAX_STATUS'' from default_dcorder.DCO_ORIGINAL_ORDER O JOIN default_dcorder.DCO_ORDER_STATUS DS ON DS.ORDER_STATUS_ID = O.MAXIMUM_STATUS JOIN default_dcorder.DCO_ORDER_STATUS DS2 ON DS2.ORDER_STATUS_ID = O.MINIMUM_STATUS WHERE 1=1 AND O.MAXIMUM_STATUS < 8000 AND O.CREATED_TIMESTAMP < NOW() - INTERVAL 7 DAY AND O.ORG_ID = $orgId;"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='ROM') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-open-order-1w');
+
+
+--   WSD
 update app.warehouselocationdetail set payload = '{
-    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "alertName":"Open Order In Wm > 1 Week",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -260,51 +197,26 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "body":"",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"Roxanne.Bernal@RNDC-USA.COM;John.Hay@RNDC-USA.COM",
-        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "toEmail":"demetrius.dever@rndc-usa.com, Michael.Clark@RNDC-USA.com, guy.sriwatcharakul@rndc-usa.com, hank.dryden@rndc-usa.com",
+        "ccEmail":"wmsinternal@rndc-usa.com",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
-}' where warehouseid = (select w.warehouseid 
-                        from app.warehouselocation w 
-                        where w.warehouseshortname='SIO') 
-    and requesttypeid=(select rt.requesttypeid 
-                        from app.requesttype rt 
-                        where rt.description='db-alert-inv-adj-miss-rc');
--- (TAM)
- update app.warehouselocationdetail set payload = '{
-    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
-    "dataSource":"MAWM",
-    "database":{
-        "connection":"MAPRD_NEW",
-        "type":"MySQL",
-        "uri":"jdbc:{host}:{port}/information_schema"
-    },
-    "email":{
-        "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
-        "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"stephen.king@rndc-usa.com,doug.lepkowski@rndc-usa.com, Eduardo.Gutierrez@rndc-usa.com",
-        "ccEmail":"wmsinternal@rndc-usa.com, wmsconsultant@rndc-usa.com,WMSMSPSupport@rndc-usa.com",
-        "footer":"",
-        "attachment":["link-to-alert","link-to-results", "inline-table"]
-    },
-    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
-}
-' where warehouseid = (select w.warehouseid 
-                        from app.warehouselocation w 
-                        where w.warehouseshortname='TAM') 
-    and requesttypeid=(select rt.requesttypeid 
-                        from app.requesttype rt 
-                        where rt.description='db-alert-inv-adj-miss-rc');
+    "sql":"SELECT O.ORG_ID, O.ORIGINAL_ORDER_ID, O.CREATED_TIMESTAMP, O.ORDER_TYPE, CASE WHEN UPPER(ORDER_TYPE) = ''STANDARD'' THEN O.EXT_ROUTE_ID else NULL END AS ''ROUTE'', CONCAT(O.MAXIMUM_STATUS,''-'',DS.DESCRIPTION) ''MAX_STATUS'' from default_dcorder.DCO_ORIGINAL_ORDER O JOIN default_dcorder.DCO_ORDER_STATUS DS ON DS.ORDER_STATUS_ID = O.MAXIMUM_STATUS JOIN default_dcorder.DCO_ORDER_STATUS DS2 ON DS2.ORDER_STATUS_ID = O.MINIMUM_STATUS WHERE 1=1 AND O.MAXIMUM_STATUS < 8000 AND O.CREATED_TIMESTAMP < NOW() - INTERVAL 7 DAY AND O.ORG_ID = $orgId;"
+}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='WSD') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-open-order-1w');
+
+
+
+
+
 
 
 -- (Unnamed)
+--  Disabled queries
 update app.warehouselocationdetail set payload = '{
-    "alertName":"INVENTORY ADJUSTMENT PIX MISSING REASON CODE",
+    "alertName":"Open Order In Wm > 1 Week",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -313,22 +225,21 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br /><br />***MSP TO CLEAN UP***</pre>",
+        "body":"",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
         "toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM, DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
         "ccEmail":"",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT PE.org_id, PE.created_timestamp, PE.item_id, CASE WHEN PE.adjusted_type = ''SUBTRACT'' THEN -PE.quantity WHEN PE.adjusted_type = ''ADD'' THEN PE.quantity END AS ''quantity'' , PE.reason_code_id , PE.sync_batch_id, PE.pix_specification_id, Concat(PE.status_id,''-'',PS.description) ''status'', PE.created_by FROM default_pix.PIX_PIX_ENTRY PE LEFT JOIN default_pix.PIX_PIX_STATUS PS ON PS.status_id = PE.status_id WHERE PE.pix_specification_id = ''Inventory Adjustment'' AND PE.created_timestamp BETWEEN Now() - INTERVAL 1455 minute  and now() - interval 1 minute  AND reason_code_id IS NULL AND PE.org_id = $orgId;"
+    "sql":"SELECT O.ORG_ID, O.ORIGINAL_ORDER_ID, O.CREATED_TIMESTAMP, O.ORDER_TYPE, CASE WHEN UPPER(ORDER_TYPE) = ''STANDARD'' THEN O.EXT_ROUTE_ID else NULL END AS ''ROUTE'', CONCAT(O.MAXIMUM_STATUS,''-'',DS.DESCRIPTION) ''MAX_STATUS'' from default_dcorder.DCO_ORIGINAL_ORDER O JOIN default_dcorder.DCO_ORDER_STATUS DS ON DS.ORDER_STATUS_ID = O.MAXIMUM_STATUS JOIN default_dcorder.DCO_ORDER_STATUS DS2 ON DS2.ORDER_STATUS_ID = O.MINIMUM_STATUS WHERE 1=1 AND O.MAXIMUM_STATUS < 8000 AND O.CREATED_TIMESTAMP < NOW() - INTERVAL 7 DAY AND O.ORG_ID = $orgId;"
 }' 
 where warehouseid in (select wl.warehouseid
             from app.warehouselocation wl  
-            where wl.warehouseshortname not in  ('ARK', 'ELP', 'JES', 'LIV', 'LOU', 'PEN', 'POR', 'ROM', 'SIO', 'TAM'))
+            where wl.warehouseshortname not in  ('ABQ', 'ARK', 'AUB', 'PEN', 'POR', 'ROM', 'WSD'))
     and requesttypeid=(select rt.requesttypeid
                 from app.requesttype rt 
-                where rt.description='db-alert-inv-adj-miss-rc');
-
+                where rt.description='db-alert-open-order-1w');
 
 
 
@@ -340,18 +251,18 @@ where warehouseid in (select wl.warehouseid
 select wld.payload, wl.warehouseshortname, wld.description
 from app.warehouselocationdetail wld join app.warehouselocation wl
 on wld.warehouseid = wl.warehouseid 
-where description != 'db-alert-inv-adj-miss-rc'
+where description != 'db-alert-open-order-1w'
 and wld.payload is not null
 -- order by wld.payload
 
 
 
 
-select  wld.payload, wl.warehouseshortname, wld.description, wld.lastupdatedon
+select  wld.payload, wl.warehouseshortname, wld.description
 from app.warehouselocationdetail wld join app.warehouselocation wl
 on wld.warehouseid = wl.warehouseid 
-where description = 'db-alert-inv-adj-miss-rc'
-and wld.payload is not null
+where description = 'db-alert-open-order-1w'
+and wld.payload is null
 order by wld.lastupdatedon
 
 
@@ -359,7 +270,7 @@ order by wld.lastupdatedon
 select  wld.payload, wl.warehouseshortname, wld.description
 from app.warehouselocationdetail wld join app.warehouselocation wl
 on wld.warehouseid = wl.warehouseid 
-where description = 'db-alert-inv-adj-miss-rc'
+where description = 'db-alert-open-order-1w'
 and wld.payload is not null
 order by wl.warehouseshortname
 
@@ -372,6 +283,6 @@ FROM (
         wd.*, 
         row_number() OVER () AS rn
     FROM app.warehouselocationdetail wd
-	where description = 'db-alert-inv-adj-miss-rc'
+	where description = 'db-alert-open-order-1w'
 ) t 
 where (payload::jsonb IS NOT NULL);
