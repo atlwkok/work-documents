@@ -1,6 +1,6 @@
 select *
 from app.warehouselocationdetail
-where description like '%tmp-inv-no-resv%';
+where description like '%multi-ord-lines%';
 
 -- do $$
 -- BEGIN
@@ -8,14 +8,14 @@ where description like '%tmp-inv-no-resv%';
 -- 	END IF;
 
 -- insert enabled alerts without payload
---  db-alert-olpn-multi-det.
+--  db-alert-multi-ord-lines.
 
 
 insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
     select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
         from app.warehouselocation w, app.requesttype rt 
         where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
-        and rt.description = 'db-alert-olpn-multi-det' 
+        and rt.description = 'db-alert-multi-ord-lines' 
         and not exists (select 1 from app.warehouselocationdetail r 
                             where r.requesttypeid = rt.requesttypeid 
                             and r.warehouseid = w.warehouseid);
@@ -35,7 +35,7 @@ from app.warehouselocationdetail r, app.warehouselocation
 
 select *
 	from app.warehouselocationdetail wld, app.warehouselocation wl
-	where wld.description like ('%db-alert-olpn-multi-det')
+	where wld.description like ('%db-alert-multi-ord-lines')
 	AND wld.warehouseid = wl.warehouseid 
 	order by wl.warehouseshortname
 
@@ -46,12 +46,12 @@ select *
 
 -- insert payload for enabled alerts:
 
---  db-alert-olpn-multi-det.
- 
+--  db-alert-multi-ord-lines.
+
 --  Named queries (only (ALL) as of writing)
 --   ALL
 update app.warehouselocationdetail set payload = '{
-    "alertName":"MAWM - Olpns W/ Multiple Details Of The Same Item",
+    "alertName":"MAWM - Multiple Order Lines Per Original Order Line",
     "dataSource":"MAWM",
     "database":{
         "connection":"MAPRD_NEW",
@@ -60,15 +60,16 @@ update app.warehouselocationdetail set payload = '{
     },
     "email":{
         "subject":"Splunk Alert: $name$",
-        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />Note: Manhattan case 7977755 is opened for this.  Review Cubing Strategy Cube to Capacity Break Criteria<br />Note: Manhattan case 7107223 is opened and closed for this. New case 7977755 is now opened to track this issue.  Review Cubing Strategy Cube to Capacity Break Criteria</pre>",
+        "body":"<pre>The alert condition for ''$name$'' was triggered.<br />Note: Manhattan Case 7639712 is opened for this.</pre>",
         "fromEmail":"wms-tools-noreply@rndc-usa.com",
-        "toEmail":"WMSInternal@rndc-usa.com, WMSConsultant@rndc-usa.com , DL_MANH_RNDC_MAWM_PSO@manh.com, DL_RNDC_MAWM_CSO@manh.com",
+        "toEmail":"wmsinternal@rndc-usa.com",
         "ccEmail":"",
         "footer":"",
         "attachment":["link-to-alert","link-to-results", "inline-table"]
     },
-    "sql":"SELECT ORG_ID, OLPN_ID, STATUS, ORDER_PLANNING_RUN_ID, ITEM_ID, COUNT(DISTINCT OLPN_DETAIL_ID) ''LPN_DTL_COUNT'' FROM ( SELECT OLPN.ORG_ID, OLPN.PICK_LOCATION_ID, LOC.STORAGE_UOM_ID, LOC.TASK_MOVEMENT_ZONE_ID, LOC.PICK_ALLOCATION_ZONE_ID, OLPN.LPN_TYPE, OLPN.OLPN_ID, OLPN.TOTAL_LPN_QTY, OLPN.OLPN_CREATION_CODE_ID, CONCAT(OLPN.STATUS, ''-'', STAT.DESCRIPTION) ''STATUS'', OLPN.ORDER_PLANNING_RUN_ID, OLPN.ORDER_TYPE, SHIPMENT_ID, STOP_ID, OD.PICKED_QUANTITY, OD.INITIAL_QUANTITY, OD.ORIGINAL_ORDER_LINE_ID, OD.ITEM_ID, OD.OLPN_DETAIL_ID FROM default_pickpack.PPK_OLPN OLPN LEFT JOIN default_pickpack.PPK_OLPN_STATUS STAT ON STAT.OLPN_STATUS_ID = OLPN.STATUS LEFT JOIN default_dcinventory.DCI_LOCATION LOC ON LOC.LOCATION_ID = PICK_LOCATION_ID AND OLPN.ORG_ID = SUBSTR(LOC.PROFILE_ID, 1, 3) LEFT JOIN default_pickpack.PPK_OLPN_DETAIL OD ON OD.OLPN_PK = OLPN.PK AND OD.ORG_ID = OLPN.ORG_ID AND OD.STATUS <> ''9000'' WHERE 1 = 1 AND OLPN.CREATED_TIMESTAMP >= NOW() - INTERVAL 6 HOUR AND OLPN.ORDER_PLANNING_RUN_ID IN (SELECT ORDER_PLANNING_RUN_ID FROM default_dcorder.DCO_ORDER_PLAN_RUN_STRATEGY OPS WHERE UPPER(DESCRIPTION) LIKE ''STANDARD%%'' AND OPS.ORG_ID = OLPN.ORG_ID) ) A GROUP BY ORG_ID, OLPN_ID, STATUS, ORDER_PLANNING_RUN_ID, ITEM_ID HAVING COUNT(DISTINCT OLPN_DETAIL_ID) > 1;"
-}' where requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-olpn-multi-det');
+    "sql":"select distinct (org_id), order_id, case when order_planning_run_id is not null then order_planning_run_id else shorted_order_planning_run_id end as ''wave_nbr'', order_type, original_order_line_id, item_id, count(order_line_id) from ( select o.org_id, o.order_id, o.order_type, oli.original_order_line_id, oli.order_line_id, oli.item_id, oli.order_planning_run_id, oli.shorted_order_planning_run_id, oli.status, oli.shortage_line, oli.ext_original_order_line_quantity, oli.ext_allocation_strategy, oli.packed_quantity, o.updated_timestamp from default_dcorder.DCO_ORDER_LINE oli join default_dcorder.DCO_ORDER o on oli.original_order_id = o.order_id and o.org_id = oli.org_id where oli.pipeline_status > 1000 and oli.updated_timestamp >= now() - INTERVAL 12 HOUR ) a group by org_id, order_id, wave_nbr, order_type, original_order_line_id, item_id having count(order_line_id) > 1 order by org_id, order_id, original_order_line_id;"
+}' where requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='db-alert-multi-ord-lines');
+
 
 
 
@@ -85,7 +86,7 @@ update app.warehouselocationdetail set payload = '{
 select wld.payload, wl.warehouseshortname, wld.description
 from app.warehouselocationdetail wld join app.warehouselocation wl
 on wld.warehouseid = wl.warehouseid 
-where description != 'db-alert-olpn-multi-det'
+where description != 'db-alert-multi-ord-lines'
 and wld.payload is not null
 -- order by wld.payload
 
@@ -95,7 +96,7 @@ and wld.payload is not null
 select  wld.payload, wl.warehouseshortname, wld.description
 from app.warehouselocationdetail wld join app.warehouselocation wl
 on wld.warehouseid = wl.warehouseid 
-where description = 'db-alert-olpn-multi-det'
+where description = 'db-alert-multi-ord-lines'
 and wld.payload is not null
 order by wld.lastupdatedon
 
@@ -104,7 +105,7 @@ order by wld.lastupdatedon
 select  wld.payload, wl.warehouseshortname, wld.description
 from app.warehouselocationdetail wld join app.warehouselocation wl
 on wld.warehouseid = wl.warehouseid 
-where description = 'db-alert-olpn-multi-det'
+where description = 'db-alert-multi-ord-lines'
 and wld.payload is not null
 order by wl.warehouseshortname
 
@@ -117,6 +118,6 @@ FROM (
         wd.*, 
         row_number() OVER () AS rn
     FROM app.warehouselocationdetail wd
-	where description = 'db-alert-olpn-multi-det'
+	where description = 'db-alert-multi-ord-lines'
 ) t 
 where (payload::jsonb IS NOT NULL);
