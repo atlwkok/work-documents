@@ -1,0 +1,35 @@
+{
+    "emailContent": {
+        "subject": "Splunk Alert: Item Image URL Failure",
+        "fromEmail": "noreply@rndc-usa.com",
+        "toEmail": "wmsinternal@RNDC-USA.COM, WMSadmin@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM",
+        "sections": [
+            {
+                "htmlHeader": "<h2 style=\"margin:0;\">TBD</h2>"
+            },
+            {
+                "introHtml": "created.in.the.python.code"
+            },
+            {
+                "tableHtml": {
+                    "tableHeaders": [
+                        "ITEM_ID",
+                        "IMAGE_URL"
+                    ],
+                    "tableRows": []
+                }
+            },
+            {
+                "footerHtml": "<h2 style=\"margin:0;\">FOOTER.TBD</h2>"
+            }
+        ]
+    },
+    "allOption": [
+        {
+            "sql": "SELECT ITEM_ID, IMAGE_URL FROM default_item_master.ITE_ITEM WHERE PROFILE_ID LIKE concat(%(orgId)s , ''_Org_Profile%%'')"
+        },
+        {
+            "days": "0"
+        }
+    ]
+}
