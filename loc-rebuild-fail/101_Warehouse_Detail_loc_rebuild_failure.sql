@@ -1,54 +1,15 @@
-select *
-from app.warehouselocationdetail
-where description like '%rebuild%';
+﻿do $$
+BEGIN
+	-- Insert warehouse location details for loc-rebuild-fail
+	insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
+		select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
+			from app.warehouselocation w, app.requesttype rt 
+			where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
+			and rt.description = 'loc-rebuild-fail' 
+			and not exists (select 1 from app.warehouselocationdetail r 
+								where r.requesttypeid = rt.requesttypeid 
+								and r.warehouseid = w.warehouseid);
 
--- do $$
--- BEGIN
- 
--- 	END IF;
-
--- insert enabled alerts without payload
---  item-img-url-fail.
-
-
-insert into app.warehouselocationdetail(description, longdescription, warehouseid, requesttypeid, createdby, lastupdatedby) 
-	select rt.description, rt.description, w.warehouseid,  rt.requesttypeid, 'sysuser', 'sysuser' 
-		from app.warehouselocation w, app.requesttype rt 
-		where w.warehouseshortname not in ('DEFAULTS', 'PRODEV') 
-		and rt.description = 'loc-rebuild-fail' 
-		and not exists (select 1 from app.warehouselocationdetail r 
-							where r.requesttypeid = rt.requesttypeid 
-							and r.warehouseid = w.warehouseid);
-
-
-
-
-
-
-
-
--- Check if enabled alerts were properly inserted
-
- 
-  
-
-select *
-	from app.warehouselocationdetail wld, app.warehouselocation wl
-	where wld.description like ('%loc-rebuild-fail')
-	AND wld.warehouseid = wl.warehouseid 
-	order by wl.warehouseshortname
-
-
-
-
-
-
--- insert payload for enabled alerts:
-
---  item-img-url-fail.
-
---  Named queries (only (ALL) as of writing)
---   ALL
 
 	update app.warehouselocationdetail set payload = '{ "emailContent": {"subject":"Splunk Alert: Location Rebuild Failure","fromEmail":"noreply@rndc-usa.com","toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM","sections":[{"htmlHeader":"<h2 style=\"margin:0;\">TBD</h2>"},{"introHtml":"created.in.the.python.code"},{"tableHtml":{"tableHeaders":["create_time", "Location Rebuild API Status"],"tableRows":[]}},{"footerHtml":"<h2 style=\"margin:0;\">FOOTER.TBD</h2>"}]}, "allOption": [{"days": "0"}]}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='ABQ') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='loc-rebuild-fail');
 	update app.warehouselocationdetail set payload = '{ "emailContent": {"subject":"Splunk Alert: Location Rebuild Failure","fromEmail":"noreply@rndc-usa.com","toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM","sections":[{"htmlHeader":"<h2 style=\"margin:0;\">TBD</h2>"},{"introHtml":"created.in.the.python.code"},{"tableHtml":{"tableHeaders":["create_time", "Location Rebuild API Status"],"tableRows":[]}},{"footerHtml":"<h2 style=\"margin:0;\">FOOTER.TBD</h2>"}]}, "allOption": [{"days": "0"}]}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='ARK') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='loc-rebuild-fail');
@@ -90,43 +51,5 @@ select *
 	update app.warehouselocationdetail set payload = '{ "emailContent": {"subject":"Splunk Alert: Location Rebuild Failure","fromEmail":"noreply@rndc-usa.com","toEmail":"wmsinternal@RNDC-USA.COM, WMSMSPSupport@RNDC-USA.COM","sections":[{"htmlHeader":"<h2 style=\"margin:0;\">TBD</h2>"},{"introHtml":"created.in.the.python.code"},{"tableHtml":{"tableHeaders":["create_time", "Location Rebuild API Status"],"tableRows":[]}},{"footerHtml":"<h2 style=\"margin:0;\">FOOTER.TBD</h2>"}]}, "allOption": [{"days": "0"}]}' where warehouseid = (select w.warehouseid from app.warehouselocation w where w.warehouseshortname='WSD') and requesttypeid=(select rt.requesttypeid from app.requesttype rt where rt.description='loc-rebuild-fail');
 
 
-
-
--- (Unnamed)
---  Disabled queries
-
- 
-
--- Check and ensure right payloads are inserted and not affecting other unrelated records
-
-
-select wld.payload, wl.warehouseshortname, wld.description
-from app.warehouselocationdetail wld join app.warehouselocation wl
-on wld.warehouseid = wl.warehouseid 
-where description != 'loc-rebuild-fail'
-and wld.payload is not null
--- order by wld.payload
-
-
-
-
-select  wld.payload, wl.warehouseshortname, wld.description
-from app.warehouselocationdetail wld join app.warehouselocation wl
-on wld.warehouseid = wl.warehouseid 
-where description = 'loc-rebuild-fail'
-and wld.payload is not null
-order by wld.lastupdatedon
-
-
-
--- Test to ensure payloads can successfully be converted to JSON
-
-SELECT *
-FROM (
-    SELECT 
-        wd.*, 
-        row_number() OVER () AS rn
-    FROM app.warehouselocationdetail wd
-	where description = 'item-img-url-fail'
-) t 
-where (payload::jsonb IS NOT NULL);
+END
+$$
